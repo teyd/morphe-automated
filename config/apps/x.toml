@@ -2,6 +2,10 @@ name = "X"
 package = "com.twitter.android"
 sources = ["piko-newx"]
 
+# piko's patch list has no certificate for X, so this was pinned from the first APKMirror download
+# (trust on first use). Cross-check it against the signature shown on APKMirror's X page.
+expected_signatures = ["0fd9a0cfb07b65950997b4eaebdc53931392391aa406538a3b04073bc2ce2fe9"]
+
 [download]
 apkmirror = "x-corp/twitter"
 uptodown = "twitter"
