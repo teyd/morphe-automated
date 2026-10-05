@@ -30,6 +30,10 @@ run = "bun src/main.ts build"
 description = "Generate your personal signing keystore and print the secrets to set"
 run = "bun src/main.ts keystore init"
 
+[tasks.obtainium]
+description = "Print the README table of Obtainium import links: mise run obtainium --repo owner/name"
+run = "bun src/main.ts obtainium"
+
 [tasks.takedown]
 description = "Delete all releases of an app and disable it: mise run takedown x"
 run = "bun src/main.ts takedown"
