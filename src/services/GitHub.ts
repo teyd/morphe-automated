@@ -13,7 +13,7 @@ export interface GitHubClient {
 const fromWeb = (error: WebError) =>
   new GitHubError({
     message: `${error.url}: ${error.message}`,
-    ...(error.status === undefined ? {} : { status: error.status }),
+    status: error.status,
   });
 
 export class GitHub extends Context.Service<GitHub, GitHubClient>()("morphe-automated/GitHub") {
@@ -24,11 +24,15 @@ export class GitHub extends Context.Service<GitHub, GitHubClient>()("morphe-auto
       const token = yield* Config.option(Config.Redacted("GITHUB_TOKEN")).pipe(Effect.orDie);
 
       // The token only ever goes to the API host, never to download or redirect targets.
-      const apiHeaders: Record<string, string> = {
+      const baseHeaders = {
         accept: "application/vnd.github+json",
         "x-github-api-version": "2022-11-28",
-        ...(Option.isSome(token) ? { authorization: `Bearer ${Redacted.value(token.value)}` } : {}),
       };
+
+      const apiHeaders = Option.match(token, {
+        onNone: () => baseHeaders,
+        onSome: (value) => ({ ...baseHeaders, authorization: `Bearer ${Redacted.value(value)}` }),
+      });
 
       const releases = Effect.fn("GitHub.releases")(function* (repo: string) {
         const json = yield* web

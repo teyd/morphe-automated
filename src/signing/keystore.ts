@@ -48,7 +48,7 @@ export const withSigningKey = <A, E, R>(
       const directory = yield* fs
         .makeTempDirectoryScoped({
           prefix: "morphe-automated-key-",
-          ...(inMemory ? { directory: "/dev/shm" } : {}),
+          directory: inMemory ? "/dev/shm" : undefined,
         })
         .pipe(Effect.mapError((error) => new KeystoreError({ message: error.message })));
 

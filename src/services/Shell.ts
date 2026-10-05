@@ -59,8 +59,8 @@ export class Shell extends Context.Service<Shell, ShellClient>()("morphe-automat
             const handle = yield* spawner.spawn(
               ChildProcess.make(command, [...args], {
                 extendEnv: true,
-                ...(options.env === undefined ? {} : { env: { ...options.env } }),
-                ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
+                env: options.env,
+                cwd: options.cwd,
               }),
             );
 
