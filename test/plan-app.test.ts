@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Match } from "effect";
 import { parseApp } from "../src/config/load.ts";
 import type { LoadedConfig } from "../src/config/load.ts";
 import type { Release } from "../src/domain/github.ts";
@@ -83,28 +83,27 @@ const world = (previous: BuildManifest | undefined, patchesTag = "v1.45.0") => {
       GitHub.of({
         releases: (repo) =>
           Effect.succeed(
-            repo === "MorpheApp/morphe-patches"
-              ? [
-                  release(
-                    patchesTag,
-                    "2026-10-02T08:55:00Z",
-                    `patches-${patchesTag.slice(1)}.mpp`,
-                    "ab",
+            Match.value(repo).pipe(
+              Match.when("MorpheApp/morphe-patches", () => [
+                release(
+                  patchesTag,
+                  "2026-10-02T08:55:00Z",
+                  `patches-${patchesTag.slice(1)}.mpp`,
+                  "ab",
+                ),
+              ]),
+              Match.when("MorpheApp/morphe-desktop", () => [
+                {
+                  ...release(
+                    "v1.18.1",
+                    "2026-10-04T00:00:00Z",
+                    "morphe-desktop-1.18.1-all.jar",
+                    "cd",
                   ),
-                ]
-              : repo === "MorpheApp/morphe-desktop"
-                ? [
-                    release(
-                      "v1.18.1",
-                      "2026-10-05T11:51:00Z",
-                      "morphe-desktop-1.18.1-all.jar",
-                      "cd",
-                    ),
-                  ].map((r) => ({
-                    ...r,
-                    published_at: "2026-10-04T00:00:00Z",
-                  }))
-                : mine,
+                },
+              ]),
+              Match.orElse(() => mine),
+            ),
           ),
         rawFile: () => Effect.succeed(patchesList.replace('"1.45.0"', `"${patchesTag.slice(1)}"`)),
       }),

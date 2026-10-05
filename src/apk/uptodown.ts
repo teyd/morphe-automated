@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Data, Effect } from "effect";
 import { parse } from "node-html-parser";
 import { ApkNotFound, SourceBlocked, type WebError } from "../domain/errors.ts";
 import { looksLikeZip, type WebClient } from "../services/Web.ts";
@@ -26,10 +26,13 @@ export const parseVersions = (html: string): ReadonlyArray<UptodownVersion> =>
       return [{ id, version, kind: type === "apk" ? ("apk" as const) : ("bundle" as const) }];
     });
 
-export type DownloadPage =
-  | { readonly _tag: "Direct"; readonly path: string }
-  | { readonly _tag: "Captcha" }
-  | { readonly _tag: "Missing" };
+export type DownloadPage = Data.TaggedEnum<{
+  Direct: { readonly path: string };
+  Captcha: {};
+  Missing: {};
+}>;
+
+export const DownloadPage = Data.taggedEnum<DownloadPage>();
 
 /**
  * Uptodown hands out the file through a one-off token. Today that token is gated behind an
@@ -40,11 +43,11 @@ export const parseDownloadPage = (html: string): DownloadPage => {
   const root = parse(html);
   const token = root.querySelector("#detail-download-button")?.getAttribute("data-url");
 
-  if (token) return { _tag: "Direct", path: token };
+  if (token) return DownloadPage.Direct({ path: token });
 
-  if (root.querySelector("#download-turnstile-widget") !== null) return { _tag: "Captcha" };
+  if (root.querySelector("#download-turnstile-widget") !== null) return DownloadPage.Captcha();
 
-  return { _tag: "Missing" };
+  return DownloadPage.Missing();
 };
 
 const blocked = (message: string) => new SourceBlocked({ source: NAME, message });
@@ -79,11 +82,12 @@ export const uptodownSource = (web: WebClient): ApkSource => {
       yield* web.text(`${base}/download/${chosen.id}`).pipe(Effect.mapError(fromWeb)),
     );
 
-    if (page._tag === "Captcha") {
+    if (DownloadPage.$is("Captcha")(page)) {
       return yield* blocked("download requires an interactive captcha (Cloudflare Turnstile)");
     }
 
-    if (page._tag === "Missing") return yield* notFound("download page has no download button");
+    if (DownloadPage.$is("Missing")(page))
+      return yield* notFound("download page has no download button");
 
     const destination = `${request.destination}.${chosen.kind === "apk" ? "apk" : "apkm"}`;
 

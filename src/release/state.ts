@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import type { GitHubError } from "../domain/errors.ts";
 import type { Release } from "../domain/github.ts";
 import { BuildManifest } from "../domain/manifest.ts";
@@ -43,10 +43,10 @@ export const previousBuild = Effect.fn("previousBuild")(function* (
 
   const json = yield* web.json(asset.browser_download_url).pipe(Effect.option);
 
-  if (json._tag === "None") return undefined;
+  if (Option.isNone(json)) return undefined;
   const manifest = yield* Schema.decodeUnknownEffect(BuildManifest)(json.value).pipe(Effect.option);
 
-  return manifest._tag === "Some" ? manifest.value : undefined;
+  return Option.getOrUndefined(manifest);
 });
 
 export type PreviousBuildError = GitHubError;

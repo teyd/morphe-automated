@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Predicate, Result } from "effect";
 import { ApkNotFound, SourceBlocked, type WebError } from "../domain/errors.ts";
 import { looksLikeZip, type WebClient } from "../services/Web.ts";
 import {
@@ -73,9 +73,9 @@ export const apkMirrorSource = (web: WebClient): ApkSource => {
       const guess = guessReleasePath(appPath, prefix, version);
       const attempt = yield* Effect.result(page(guess));
 
-      if (attempt._tag === "Success") return guess;
+      if (Result.isSuccess(attempt)) return guess;
 
-      if (attempt.failure._tag === "SourceBlocked") return yield* attempt.failure;
+      if (Predicate.isTagged(attempt.failure, "SourceBlocked")) return yield* attempt.failure;
     }
 
     const category = findUploadsCategory(appHtml);

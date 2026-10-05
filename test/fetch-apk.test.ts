@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Effect } from "effect";
+import { Effect, Match } from "effect";
 import { ApkNotFound, SourceBlocked } from "../src/domain/errors.ts";
 import { fetchApk, type ApkFile, type ApkRequest, type ApkSource } from "../src/apk/source.ts";
 
@@ -17,11 +17,16 @@ const file: ApkFile = { source: "good", kind: "apk", path: "/tmp/x.apk", sha256:
 const source = (name: string, outcome: "ok" | "blocked" | "missing"): ApkSource => ({
   name,
   fetch: () =>
-    outcome === "ok"
-      ? Effect.succeed({ ...file, source: name })
-      : outcome === "blocked"
-        ? Effect.fail(new SourceBlocked({ source: name, message: "cloudflare" }))
-        : Effect.fail(new ApkNotFound({ source: name, message: "no such version" })),
+    Match.value(outcome).pipe(
+      Match.when("ok", () => Effect.succeed({ ...file, source: name })),
+      Match.when("blocked", () =>
+        Effect.fail(new SourceBlocked({ source: name, message: "cloudflare" })),
+      ),
+      Match.when("missing", () =>
+        Effect.fail(new ApkNotFound({ source: name, message: "no such version" })),
+      ),
+      Match.exhaustive,
+    ),
 });
 
 describe("fetchApk", () => {

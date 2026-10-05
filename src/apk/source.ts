@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Result } from "effect";
 import type { AppConfig } from "../config/schema.ts";
 import { ApkNotFound, type SourceBlocked } from "../domain/errors.ts";
 import type { VariantKind } from "./apkmirror-parse.ts";
@@ -37,7 +37,7 @@ export const fetchApk = Effect.fn("fetchApk")(function* (
   for (const source of sources) {
     const result = yield* Effect.result(source.fetch(request));
 
-    if (result._tag === "Success") return result.success;
+    if (Result.isSuccess(result)) return result.success;
     yield* Effect.logWarning(`${source.name}: ${result.failure.message}`);
     failures.push(`${source.name}: ${result.failure.message}`);
   }

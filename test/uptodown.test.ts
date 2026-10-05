@@ -2,7 +2,12 @@ import { readFileSync } from "node:fs";
 import { assert, describe, it } from "@effect/vitest";
 import { Effect } from "effect";
 import type { ApkRequest } from "../src/apk/source.ts";
-import { parseDownloadPage, parseVersions, uptodownSource } from "../src/apk/uptodown.ts";
+import {
+  DownloadPage,
+  parseDownloadPage,
+  parseVersions,
+  uptodownSource,
+} from "../src/apk/uptodown.ts";
 import type { WebClient } from "../src/services/Web.ts";
 
 const fixture = (name: string) =>
@@ -38,14 +43,14 @@ describe("uptodown parsing", () => {
   });
 
   it("detects the captcha gate", () => {
-    assert.deepStrictEqual(parseDownloadPage(fixture("download-instagram.html")), {
-      _tag: "Captcha",
-    });
+    assert.isTrue(
+      DownloadPage.$is("Captcha")(parseDownloadPage(fixture("download-instagram.html"))),
+    );
   });
 
   it("uses a direct token when the page exposes one", () => {
     const html = '<button id="detail-download-button" data-url="abc/def"></button>';
-    assert.deepStrictEqual(parseDownloadPage(html), { _tag: "Direct", path: "abc/def" });
+    assert.deepStrictEqual(parseDownloadPage(html), DownloadPage.Direct({ path: "abc/def" }));
   });
 });
 

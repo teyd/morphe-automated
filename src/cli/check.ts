@@ -1,4 +1,4 @@
-import { Config, Console, Effect, FileSystem, Option } from "effect";
+import { Config, Console, Effect, FileSystem, Option, Result } from "effect";
 import { Command, Flag } from "effect/cli";
 import { loadConfig } from "../config/load.ts";
 import { planApp, type AppPlan } from "../pipeline/plan.ts";
@@ -59,7 +59,7 @@ export const check = Command.make(
     for (const candidate of apps) {
       const result = yield* Effect.result(planApp(candidate, loaded, { now, repo, force }));
 
-      if (result._tag === "Failure") {
+      if (Result.isFailure(result)) {
         const message =
           result.failure instanceof Error ? result.failure.message : String(result.failure);
 
