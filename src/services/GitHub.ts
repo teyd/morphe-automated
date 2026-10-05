@@ -16,7 +16,7 @@ const fromWeb = (error: WebError) =>
     ...(error.status === undefined ? {} : { status: error.status }),
   });
 
-export class GitHub extends Context.Service<GitHub, GitHubClient>()("apk-forge/GitHub") {
+export class GitHub extends Context.Service<GitHub, GitHubClient>()("morphe-automated/GitHub") {
   static readonly layer = Layer.effect(
     GitHub,
     Effect.gen(function* () {

@@ -3,7 +3,7 @@ import { Effect, Redacted } from "effect";
 import { KeystoreError } from "../domain/errors.ts";
 import { Shell } from "../services/Shell.ts";
 
-const PASSWORD_ENV = "APK_FORGE_KEYSTORE_PASSWORD";
+const PASSWORD_ENV = "MORPHE_AUTOMATED_KEYSTORE_PASSWORD";
 
 /** DER bytes of the first PEM certificate in `pem`. */
 export const pemToDer = (pem: string): Uint8Array => {
@@ -19,7 +19,7 @@ export interface NewKeystore {
   readonly path: string;
   readonly alias: string;
   readonly password: Redacted.Redacted<string>;
-  /** Certificate subject, e.g. `CN=Alice APK Forge`. */
+  /** Certificate subject, e.g. `CN=Alice Morphe Automated`. */
   readonly distinguishedName: string;
 }
 

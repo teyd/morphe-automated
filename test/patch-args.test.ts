@@ -12,7 +12,7 @@ const job: PatchJob = {
   patches: { enable: [], disable: [], exclusive: false, options: {} },
   key: {
     path: "/dev/shm/k.p12",
-    alias: "apk-forge",
+    alias: "morphe-automated",
     password: Redacted.make("secret"),
     certSha256: "aa",
   },
@@ -31,7 +31,7 @@ describe("patchArgs", () => {
       "--keystore-password",
       "secret",
       "--keystore-entry-alias",
-      "apk-forge",
+      "morphe-automated",
       "--keystore-entry-password",
       "secret",
       "--striplibs",

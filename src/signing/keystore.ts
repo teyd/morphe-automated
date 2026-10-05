@@ -13,7 +13,7 @@ export interface SigningKey {
 const SECRETS = Config.all({
   keystore: Config.Redacted("KEYSTORE_BASE64"),
   password: Config.Redacted("KEYSTORE_PASSWORD"),
-  alias: Config.withDefault(Config.String("KEY_ALIAS"), "apk-forge"),
+  alias: Config.withDefault(Config.String("KEY_ALIAS"), "morphe-automated"),
 });
 
 const decodeBase64 = (text: string) => new Uint8Array(Buffer.from(text.trim(), "base64"));
@@ -45,7 +45,7 @@ export const withSigningKey = <A, E, R>(
       const inMemory = yield* fs.exists("/dev/shm").pipe(Effect.orElseSucceed(() => false));
       const directory = yield* fs
         .makeTempDirectoryScoped({
-          prefix: "apk-forge-key-",
+          prefix: "morphe-automated-key-",
           ...(inMemory ? { directory: "/dev/shm" } : {}),
         })
         .pipe(Effect.mapError((error) => new KeystoreError({ message: error.message })));

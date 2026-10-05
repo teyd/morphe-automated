@@ -10,9 +10,9 @@ const init = Command.make(
       Flag.withDefault("release.p12"),
       Flag.withDescription("Where to write the keystore (keep it out of git)"),
     ),
-    alias: Flag.String("alias").pipe(Flag.withDefault("apk-forge")),
+    alias: Flag.String("alias").pipe(Flag.withDefault("morphe-automated")),
     name: Flag.String("name").pipe(
-      Flag.withDefault("APK Forge"),
+      Flag.withDefault("Morphe Automated"),
       Flag.withDescription("Common name in the certificate, e.g. your handle"),
     ),
     environment: Flag.String("environment").pipe(

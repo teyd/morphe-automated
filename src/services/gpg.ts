@@ -19,7 +19,7 @@ export const gpgVerify = Effect.fn("gpgVerify")(function* (
 
   yield* Effect.scoped(
     Effect.gen(function* () {
-      const home = yield* fs.makeTempDirectoryScoped({ prefix: "apk-forge-gpg-" });
+      const home = yield* fs.makeTempDirectoryScoped({ prefix: "morphe-automated-gpg-" });
       const env = { GNUPGHOME: home };
       yield* fs.chmod(home, 0o700);
       yield* shell.run("gpg", ["--batch", "--import", publicKey], { env });

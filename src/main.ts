@@ -8,7 +8,7 @@ import { keystore } from "./cli/keystore.ts";
 import { obtainium } from "./cli/obtainium.ts";
 import { takedown } from "./cli/takedown.ts";
 
-const root = Command.make("apk-forge").pipe(
+const root = Command.make("morphe-automated").pipe(
   Command.withDescription("Build Morphe-patched Android apps and publish them for Obtainium"),
   Command.withSubcommands([check, build, obtainium, takedown, keystore]),
 );

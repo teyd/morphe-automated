@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "apk-forge",
+      "name": "morphe-automated",
       "dependencies": {
         "@effect/platform-bun": "4.0.1",
         "effect": "4.0.1",

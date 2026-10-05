@@ -29,7 +29,7 @@ export interface ShellClient {
   ) => Effect.Effect<RunResult, ShellError>;
 }
 
-export class Shell extends Context.Service<Shell, ShellClient>()("apk-forge/Shell") {
+export class Shell extends Context.Service<Shell, ShellClient>()("morphe-automated/Shell") {
   static readonly layer = Layer.effect(
     Shell,
     Effect.gen(function* () {

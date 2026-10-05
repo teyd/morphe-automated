@@ -121,7 +121,7 @@ describe("previousBuild", () => {
 
 describe("publishing", () => {
   const job: PublishJob = {
-    repo: "alice/apk-forge",
+    repo: "alice/morphe-automated",
     identity: { slug: "youtube", name: "YouTube", inputs, fingerprint: manifest.fingerprint },
     apkPath: "/work/out.apk",
     manifest,
@@ -143,7 +143,7 @@ describe("publishing", () => {
       "/work/youtube-arm64-v8a.apk",
       "/work/m.json",
       "--repo",
-      "alice/apk-forge",
+      "alice/morphe-automated",
       "--title",
       "youtube: 21.16.256 (morphe-1.45.0)",
       "--notes-file",
@@ -195,7 +195,7 @@ describe("publishing", () => {
         "delete",
         "youtube-21.16.256-morphe-1.43.0-aaaaaaa",
         "--repo",
-        "alice/apk-forge",
+        "alice/morphe-automated",
         "--yes",
         "--cleanup-tag",
       ]);

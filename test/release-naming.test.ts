@@ -57,7 +57,7 @@ describe("obtainium config", () => {
     name: "YouTube Music",
     packageName: "com.google.android.apps.youtube.music",
     arch: "arm64-v8a",
-    repo: "alice/apk-forge",
+    repo: "alice/morphe-automated",
   };
 
   it("filters titles and APKs per app", () => {
@@ -85,7 +85,7 @@ describe("obtainium config", () => {
     const json = JSON.parse(decodeURIComponent(link.slice("obtainium://app/".length)));
     expect(json).toEqual(obtainiumApp(app));
     expect(json.id).toBe("com.google.android.apps.youtube.music");
-    expect(json.url).toBe("https://github.com/alice/apk-forge");
+    expect(json.url).toBe("https://github.com/alice/morphe-automated");
     expect(JSON.parse(json.additionalSettings).versionDetection).toBe(false);
   });
 

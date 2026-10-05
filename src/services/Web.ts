@@ -124,6 +124,6 @@ export const makeWeb = Effect.fn("makeWeb")(function* (options: WebOptions = {})
   return web;
 });
 
-export class Web extends Context.Service<Web, WebClient>()("apk-forge/Web") {
+export class Web extends Context.Service<Web, WebClient>()("morphe-automated/Web") {
   static readonly layer = Layer.effect(Web, makeWeb()).pipe(Layer.provide(FetchHttpClient.layer));
 }

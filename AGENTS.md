@@ -1,4 +1,4 @@
-# apk-forge
+# morphe-automated
 
 Daily GitHub Actions builder for Morphe-patched apps. User-facing behaviour lives in `README.md`.
 

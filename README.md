@@ -1,4 +1,4 @@
-# apk-forge
+# morphe-automated
 
 Builds Morphe-patched Android apps on GitHub Actions, signs them with your own key, and publishes releases that
 [Obtainium](https://github.com/ImranR98/Obtainium) updates from. A daily job builds an app only when its inputs changed.
