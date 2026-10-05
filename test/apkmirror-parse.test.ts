@@ -83,6 +83,11 @@ describe("download steps", () => {
     );
   });
 
+  it("never leaves HTML-escaped ampersands in links", () => {
+    const html = '<a id="download-link" href="/d.php?id=1&amp;key=2">x</a>';
+    expect(findDownloadLink(html)).toBe("/d.php?id=1&key=2");
+  });
+
   it("recognises a Cloudflare challenge page", () => {
     expect(isChallenge("<html><head><title>Just a moment...</title>")).toBe(true);
     expect(isChallenge(fixture("listing-x.html"))).toBe(false);

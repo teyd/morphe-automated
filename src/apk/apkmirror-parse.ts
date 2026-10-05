@@ -87,13 +87,15 @@ export const pickVariant = (
     )[0]?.variant;
 };
 
+const unescapeAmp = (href: string | undefined) => href?.replaceAll("&amp;", "&");
+
 /** `Download APK` button on a variant page. */
 export const findDownloadButton = (variantHtml: string): string | undefined =>
-  parse(variantHtml).querySelector("a.downloadButton")?.getAttribute("href");
+  unescapeAmp(parse(variantHtml).querySelector("a.downloadButton")?.getAttribute("href"));
 
 /** The "click here if your download doesn't start" link on the download page. */
 export const findDownloadLink = (downloadHtml: string): string | undefined =>
-  parse(downloadHtml).querySelector("a#download-link")?.getAttribute("href");
+  unescapeAmp(parse(downloadHtml).querySelector("a#download-link")?.getAttribute("href"));
 
 /** Cloudflare interstitial instead of the real page. */
 export const isChallenge = (html: string): boolean =>
