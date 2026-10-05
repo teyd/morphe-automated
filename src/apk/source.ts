@@ -22,9 +22,9 @@ export interface ApkFile {
   readonly size: number;
 }
 
-export interface ApkSource {
+export interface ApkSource<R = never> {
   readonly name: string;
-  readonly fetch: (request: ApkRequest) => Effect.Effect<ApkFile, SourceBlocked | ApkNotFound>;
+  readonly fetch: (request: ApkRequest) => Effect.Effect<ApkFile, SourceBlocked | ApkNotFound, R>;
 }
 
 /** Try each source in order; a blocked or empty source just moves on to the next. */

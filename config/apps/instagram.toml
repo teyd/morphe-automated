@@ -4,5 +4,9 @@ sources = ["piko"]
 
 [download]
 # App page is /apk/instagram/instagram-instagram/, not the publisher index /apk/instagram/.
+# That page stays on a Turnstile challenge from GitHub's IPs, so the stock bundle is taken from
+# the same public release other builders use. The asset name must contain the patch target version.
 apkmirror = "instagram/instagram-instagram"
 uptodown = "instagram"
+github_repo = "krvstek/uni-storage"
+github_tag = "instagram"

@@ -38,7 +38,7 @@ An app rebuilds when its latest release's stored fingerprint differs from the cu
 ## Known limits
 
 - Uptodown is a dead fallback: those app pages now return 410. APKMirror is the only working source.
-- Instagram is challenged on APKMirror even from a normal IP. CI renders that page in trawl's browser; Uptodown remains the fallback.
+- Instagram's APKMirror page stays on a Turnstile challenge from GitHub's IPs. The stock bundle is taken from a public GitHub release instead.
 - CI fetches APKMirror through trawl, because GitHub's own IPs are blocked.
 
 ## Legal

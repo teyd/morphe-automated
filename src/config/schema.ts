@@ -56,6 +56,10 @@ export const AppConfig = Schema.Struct({
     apkmirror: Schema.optionalKey(Schema.String),
     /** Subdomain as in `https://<slug>.en.uptodown.com/android`. */
     uptodown: Schema.optionalKey(Schema.String),
+    /** `owner/name` of a repo that hosts the stock APK as a release asset. */
+    github_repo: Schema.optionalKey(Schema.String),
+    /** Release tag that holds the stock files. The asset name must contain the app version. */
+    github_tag: Schema.optionalKey(Schema.String),
   }),
 });
 
