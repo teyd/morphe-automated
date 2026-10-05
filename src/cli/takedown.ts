@@ -1,7 +1,7 @@
-import { Console, Effect, Option } from "effect";
+import { Console, Effect } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
 import { takedownApp } from "../release/takedown.ts";
-import { configDirectory, repository } from "./common.ts";
+import { configDirectory, thisRepo } from "./common.ts";
 
 export const takedown = Command.make(
   "takedown",
@@ -14,10 +14,12 @@ export const takedown = Command.make(
     ),
   },
   Effect.fn("takedown")(function* ({ config, app, repo }) {
-    const slug = Option.getOrUndefined(repo) ?? (yield* repository);
+    const slug = yield* thisRepo(repo);
 
     if (slug === undefined) {
-      return yield* Effect.fail(new Error("pass --repo owner/name or set GITHUB_REPOSITORY"));
+      return yield* Effect.fail(
+        new Error("pass --repo owner/name; no GITHUB_REPOSITORY or origin remote"),
+      );
     }
 
     const result = yield* takedownApp(slug, app, config);

@@ -1,24 +1,26 @@
-import { Console, Effect, Option } from "effect";
+import { Console, Effect } from "effect";
 import { Command, Flag } from "effect/cli";
 import { loadConfig } from "../config/load.ts";
 import { obtainiumShareLink } from "../release/obtainium.ts";
-import { configDirectory, repository } from "./common.ts";
+import { configDirectory, thisRepo } from "./common.ts";
 
 export const obtainium = Command.make(
   "obtainium",
   {
     config: configDirectory,
     repo: Flag.String("repo").pipe(
-      Flag.withDescription("owner/name of this repository (default: $GITHUB_REPOSITORY)"),
+      Flag.withDescription("owner/name (default: $GITHUB_REPOSITORY, else the origin remote)"),
       Flag.optional,
     ),
   },
   Effect.fn("obtainium")(function* ({ config, repo }) {
     const loaded = yield* loadConfig(config);
-    const slug = Option.getOrUndefined(repo) ?? (yield* repository);
+    const slug = yield* thisRepo(repo);
 
     if (slug === undefined) {
-      return yield* Effect.fail(new Error("pass --repo owner/name or set GITHUB_REPOSITORY"));
+      return yield* Effect.fail(
+        new Error("pass --repo owner/name; no GITHUB_REPOSITORY or origin remote"),
+      );
     }
 
     const rows = loaded.apps

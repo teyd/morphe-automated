@@ -49,3 +49,7 @@ export const obtainiumLink = (app: ObtainiumApp): string =>
  */
 export const obtainiumShareLink = (app: ObtainiumApp): string =>
   `https://apps.obtainium.imranr.dev/redirect?r=${obtainiumLink(app)}`;
+
+/** `owner/name` from a GitHub remote URL, HTTPS or SSH. */
+export const repoFromRemote = (url: string): string | undefined =>
+  /github\.com[:/]([\w.-]+\/[\w.-]+?)(?:\.git)?\/?$/.exec(url.trim())?.[1];

@@ -6,6 +6,7 @@ import {
   obtainiumLink,
   obtainiumSettings,
   obtainiumShareLink,
+  repoFromRemote,
 } from "../src/release/obtainium.ts";
 
 const inputs: FingerprintInputs = {
@@ -89,6 +90,16 @@ describe("obtainium config", () => {
     expect(json.id).toBe("com.google.android.apps.youtube.music");
     expect(json.url).toBe("https://github.com/alice/morphe-automated");
     expect(JSON.parse(json.additionalSettings).versionDetection).toBe(false);
+  });
+
+  it("reads owner/name from HTTPS and SSH remotes", () => {
+    expect(repoFromRemote("https://github.com/teyd/morphe-automated.git")).toBe(
+      "teyd/morphe-automated",
+    );
+    expect(repoFromRemote("git@github.com:teyd/morphe-automated.git")).toBe(
+      "teyd/morphe-automated",
+    );
+    expect(repoFromRemote("https://example.test/nope")).toBeUndefined();
   });
 
   it("wraps the link in Obtainium's web redirect for READMEs", () => {

@@ -2,6 +2,7 @@ import { BunServices } from "@effect/platform-bun";
 import { Config, Console, Effect, Layer, Option } from "effect";
 import { Flag } from "effect/cli";
 import { APKMIRROR_WEB_OPTIONS } from "../apk/apkmirror.ts";
+import { repoFromRemote } from "../release/obtainium.ts";
 import { CurlWeb } from "../services/Curl.ts";
 import { GitHub } from "../services/GitHub.ts";
 import { Shell } from "../services/Shell.ts";
@@ -16,6 +17,17 @@ export const configDirectory = Flag.String("config").pipe(
 export const repository = Config.option(Config.String("GITHUB_REPOSITORY")).pipe(
   Effect.map(Option.getOrUndefined),
 );
+
+/** Flag, else `$GITHUB_REPOSITORY`, else the `origin` remote. */
+export const thisRepo = (flag: Option.Option<string>) =>
+  Effect.gen(function* () {
+    const fromOrigin = yield* (yield* Shell).run("git", ["remote", "get-url", "origin"]).pipe(
+      Effect.map((result) => repoFromRemote(result.stdout)),
+      Effect.orElseSucceed(() => undefined),
+    );
+
+    return Option.getOrUndefined(flag) ?? (yield* repository) ?? fromOrigin;
+  });
 
 const insideActions = Config.withDefault(Config.String("GITHUB_ACTIONS"), "").pipe(
   Effect.map((value) => value === "true"),

@@ -31,7 +31,7 @@ description = "Generate your personal signing keystore and print the secrets to 
 run = "bun src/main.ts keystore init"
 
 [tasks.obtainium]
-description = "Print the README table of Obtainium import links: mise run obtainium --repo owner/name"
+description = "Print the README table of Obtainium import links"
 run = "bun src/main.ts obtainium"
 
 [tasks.takedown]
