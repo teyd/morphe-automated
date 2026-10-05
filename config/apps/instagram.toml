@@ -1,11 +1,8 @@
-# Disabled by default: APKMirror serves a Cloudflare challenge for every Instagram page, and Uptodown
-# requires an interactive captcha, so CI cannot download the stock APK. Flip this to true if that changes.
-enabled = false
-
 name = "Instagram"
 package = "com.instagram.android"
 sources = ["piko"]
 
 [download]
+# App page is /apk/instagram/instagram-instagram/, not the publisher index /apk/instagram/.
 apkmirror = "instagram/instagram-instagram"
 uptodown = "instagram"
