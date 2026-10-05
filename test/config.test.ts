@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { Effect } from "effect";
 import { describe, expect, it } from "vite-plus/test";
-import { configHash, parseApp, parseSources } from "../src/config/load.ts";
+import { configHash, parseApp, parseSigning, parseSources } from "../src/config/load.ts";
 
 const read = (file: string) => readFileSync(new URL(`../config/${file}`, import.meta.url), "utf8");
 
@@ -24,6 +24,22 @@ describe("shipped config", () => {
         parseApp(file.replace(".toml", ""), read(`apps/${file}`)),
       );
       for (const source of app.config.sources) expect(sources).toHaveProperty(source);
+    }
+  });
+});
+
+describe("signing.toml", () => {
+  const fingerprint = "ab".repeat(32);
+
+  it("accepts a lowercase sha256 fingerprint", async () => {
+    const result = await Effect.runPromise(parseSigning(`cert_sha256 = "${fingerprint}"`));
+    expect(result).toBe(fingerprint);
+  });
+
+  it("rejects anything else", async () => {
+    for (const value of ["", "AB".repeat(32), "abc", "zz".repeat(32)]) {
+      const error = await Effect.runPromise(Effect.flip(parseSigning(`cert_sha256 = "${value}"`)));
+      expect(error._tag).toBe("ConfigError");
     }
   });
 });

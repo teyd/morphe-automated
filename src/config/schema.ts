@@ -58,3 +58,9 @@ export const AppConfig = Schema.Struct({
   }),
 });
 export type AppConfig = typeof AppConfig.Type;
+
+/** Public SHA-256 fingerprint of your signing certificate. Safe to commit; written by `keystore init`. */
+export const SigningFile = Schema.Struct({
+  cert_sha256: Schema.String.pipe(Schema.check(Schema.isPattern(/^[0-9a-f]{64}$/))),
+});
+export type SigningFile = typeof SigningFile.Type;
