@@ -1,5 +1,5 @@
 import { BunRuntime } from "@effect/platform-bun";
-import { Effect } from "effect";
+import { Console, Effect } from "effect";
 import { Command } from "effect/cli";
 import { build } from "./cli/build.ts";
 import { check } from "./cli/check.ts";
@@ -13,4 +13,12 @@ const root = Command.make("apk-forge").pipe(
   Command.withSubcommands([check, build, obtainium, takedown, keystore]),
 );
 
-root.pipe(Command.run({ version: "0.1.0" }), Effect.provide(runtimeLayer), BunRuntime.runMain);
+const describeError = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+root.pipe(
+  Command.run({ version: "0.1.0" }),
+  Effect.provide(runtimeLayer),
+  Effect.tapError((error) => Console.error(`error: ${describeError(error)}`)),
+  BunRuntime.runMain({ disableErrorReporting: true }),
+);
