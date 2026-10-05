@@ -42,3 +42,10 @@ export const obtainiumApp = (app: ObtainiumApp) => ({
 
 export const obtainiumLink = (app: ObtainiumApp): string =>
   `obtainium://app/${encodeURIComponent(JSON.stringify(obtainiumApp(app)))}`;
+
+/**
+ * Link that works in a README: GitHub strips custom URL schemes, so Obtainium's own web redirect
+ * (the one its "share" button produces) opens the app with the config.
+ */
+export const obtainiumShareLink = (app: ObtainiumApp): string =>
+  `https://apps.obtainium.imranr.dev/redirect?r=${obtainiumLink(app)}`;

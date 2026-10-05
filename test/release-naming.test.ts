@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
 import type { FingerprintInputs } from "../src/domain/manifest.ts";
 import { apkAssetName, releaseTag, releaseTitle, tagBelongsTo } from "../src/release/naming.ts";
-import { obtainiumApp, obtainiumLink, obtainiumSettings } from "../src/release/obtainium.ts";
+import {
+  obtainiumApp,
+  obtainiumLink,
+  obtainiumSettings,
+  obtainiumShareLink,
+} from "../src/release/obtainium.ts";
 
 const inputs: FingerprintInputs = {
   app: "youtube",
@@ -82,5 +87,13 @@ describe("obtainium config", () => {
     expect(json.id).toBe("com.google.android.apps.youtube.music");
     expect(json.url).toBe("https://github.com/alice/apk-forge");
     expect(JSON.parse(json.additionalSettings).versionDetection).toBe(false);
+  });
+
+  it("wraps the link in Obtainium's web redirect for READMEs", () => {
+    const share = obtainiumShareLink(app);
+    expect(share.startsWith("https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/")).toBe(
+      true,
+    );
+    expect(share.endsWith(obtainiumLink(app).slice("obtainium://app/".length))).toBe(true);
   });
 });
