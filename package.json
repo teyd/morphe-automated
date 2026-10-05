@@ -1,0 +1,22 @@
+{
+  "name": "apk-forge",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Automatic, secure Morphe patch builder with Obtainium-friendly releases",
+  "type": "module",
+  "scripts": {
+    "check": "vp check",
+    "test": "vp test run"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "4.0.1",
+    "effect": "4.0.1",
+    "smol-toml": "^1.9.0"
+  },
+  "devDependencies": {
+    "@effect/vitest": "4.0.1",
+    "@types/bun": "^1.4.2",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.0.0"
+  }
+}
