@@ -81,12 +81,48 @@ describe("apkMirrorSource", () => {
     }),
   );
 
-  it.effect("reports a version missing from every listing page as not found", () =>
+  it.effect("tries the guessed release URL before paging through uploads", () =>
+    Effect.gen(function* () {
+      const guessed = "/apk/google-inc/youtube/youtube-21-17-0-release/";
+      const { web, requested } = fakeWeb({
+        [guessed]: fixture("release-youtube-21.16.256.html"),
+      });
+      const file = yield* apkMirrorSource(web)
+        .fetch({ ...request, version: "21.17.0" })
+        .pipe(Effect.catch(() => Effect.succeed(undefined)));
+      assert.strictEqual(requested[0], "/apk/google-inc/youtube/");
+      assert.strictEqual(requested[1], guessed);
+      assert.isFalse(requested.some((r) => r.startsWith("/uploads/")));
+      void file;
+    }),
+  );
+
+  it.effect("pages through the upload history when the guess is a 404", () =>
+    Effect.gen(function* () {
+      const older = "/apk/google-inc/youtube/youtube-legacy-20-0-1-release/";
+      const { web, requested } = fakeWeb({
+        "/apk/google-inc/youtube/": `<a href="${RELEASE}">x</a><a href="/uploads/?appcategory=youtube">more</a>`,
+        "/uploads/?appcategory=youtube": "<html>nothing here</html>",
+        "/uploads/page/2/?appcategory=youtube": `<a href="${older}">20.0.1</a>`,
+        [older]: fixture("release-youtube-21.16.256.html"),
+      });
+      yield* apkMirrorSource(web)
+        .fetch({ ...request, version: "20.0.1" })
+        .pipe(Effect.catch(() => Effect.succeed(undefined)));
+      assert.deepStrictEqual(requested.slice(0, 4), [
+        "/apk/google-inc/youtube/",
+        "/apk/google-inc/youtube/youtube-20-0-1-release/",
+        "/uploads/?appcategory=youtube",
+        "/uploads/page/2/?appcategory=youtube",
+      ]);
+      assert.strictEqual(requested[4], older);
+    }),
+  );
+
+  it.effect("reports a version found nowhere as not found", () =>
     Effect.gen(function* () {
       const { web } = fakeWeb({
-        "/apk/google-inc/youtube/page/2/": "<html></html>",
-        "/apk/google-inc/youtube/page/3/": "<html></html>",
-        "/apk/google-inc/youtube/page/4/": "<html></html>",
+        "/apk/google-inc/youtube/": `<a href="${RELEASE}">x</a>`,
       });
       const error = yield* Effect.flip(
         apkMirrorSource(web).fetch({ ...request, version: "9.9.9" }),

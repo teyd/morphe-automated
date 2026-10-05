@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
 import {
+  findUploadsCategory,
+  guessReleasePath,
+  releasePrefix,
+  uploadsPath,
   findDownloadButton,
   findDownloadLink,
   findReleaseLink,
@@ -27,6 +31,37 @@ describe("findReleaseLink", () => {
 
   it("returns undefined for versions not on the page", () => {
     expect(findReleaseLink(listing, "x-corp/twitter", "1.0.0")).toBeUndefined();
+  });
+});
+
+describe("finding releases beyond the first page", () => {
+  const listing = fixture("listing-x.html");
+
+  it("learns the release prefix from the most common link, not the first", () => {
+    expect(releasePrefix(listing, "x-corp/twitter")).toBe("x");
+  });
+
+  it("copes with hyphenated prefixes", () => {
+    const html = '<a href="/apk/google-inc/youtube-music/youtube-music-9-15-51-release/">x</a>';
+    expect(releasePrefix(html, "google-inc/youtube-music")).toBe("youtube-music");
+  });
+
+  it("returns undefined without release links", () => {
+    expect(releasePrefix("<html></html>", "x-corp/twitter")).toBeUndefined();
+  });
+
+  it("guesses the release URL from prefix and version", () => {
+    expect(guessReleasePath("x-corp/twitter", "x", "12.29.1-prod.01")).toBe(
+      "/apk/x-corp/twitter/x-12-29-1-prod-01-release/",
+    );
+  });
+
+  it("finds the uploads category and builds paginated paths", () => {
+    const html = '<a class="fontBlack" href="/uploads/?appcategory=youtube">more</a>';
+    expect(findUploadsCategory(html)).toBe("youtube");
+    expect(uploadsPath("youtube", 1)).toBe("/uploads/?appcategory=youtube");
+    expect(uploadsPath("youtube", 3)).toBe("/uploads/page/3/?appcategory=youtube");
+    expect(findUploadsCategory("<html></html>")).toBeUndefined();
   });
 });
 

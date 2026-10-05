@@ -5,15 +5,20 @@ import {
   findDownloadButton,
   findDownloadLink,
   findReleaseLink,
+  findUploadsCategory,
+  guessReleasePath,
   isChallenge,
   parseVariants,
   pickVariant,
+  releasePrefix,
+  uploadsPath,
 } from "./apkmirror-parse.ts";
 import type { ApkFile, ApkRequest, ApkSource } from "./source.ts";
 
 const BASE = "https://www.apkmirror.com";
 const NAME = "apkmirror";
-const MAX_LISTING_PAGES = 4;
+/** Each uploads page holds ~30 releases; YouTube ships many betas, so older versions sit deep. */
+const MAX_UPLOAD_PAGES = 12;
 
 /** APKMirror rate limits bursts; space requests out. Pass these to `makeWeb`. */
 export const APKMIRROR_WEB_OPTIONS = {
@@ -46,18 +51,38 @@ export const apkMirrorSource = (web: WebClient): ApkSource => {
         ),
       );
 
+  /**
+   * Cheapest first: the app page (latest ~9 releases), then the release URL guessed from the naming
+   * pattern, then the full upload history page by page.
+   */
   const findRelease = Effect.fn("apkmirror.findRelease")(function* (
     appPath: string,
     version: string,
   ) {
-    for (let number = 1; number <= MAX_LISTING_PAGES; number++) {
-      const listing = number === 1 ? `/apk/${appPath}/` : `/apk/${appPath}/page/${number}/`;
-      const html = yield* page(listing);
-      const link = findReleaseLink(html, appPath, version);
+    const appHtml = yield* page(`/apk/${appPath}/`);
+    const listed = findReleaseLink(appHtml, appPath, version);
+    if (listed !== undefined) return listed;
+
+    const prefix = releasePrefix(appHtml, appPath);
+    if (prefix !== undefined) {
+      const guess = guessReleasePath(appPath, prefix, version);
+      const attempt = yield* Effect.result(page(guess));
+      if (attempt._tag === "Success") return guess;
+      if (attempt.failure._tag === "SourceBlocked") return yield* attempt.failure;
+    }
+
+    const category = findUploadsCategory(appHtml);
+    if (category === undefined) {
+      return yield* notFound(
+        `${appPath} ${version}: not on the app page and no upload history to search`,
+      );
+    }
+    for (let number = 1; number <= MAX_UPLOAD_PAGES; number++) {
+      const link = findReleaseLink(yield* page(uploadsPath(category, number)), appPath, version);
       if (link !== undefined) return link;
     }
     return yield* notFound(
-      `${appPath} ${version} is not in the first ${MAX_LISTING_PAGES} listing pages`,
+      `${appPath} ${version} is not in the latest ${MAX_UPLOAD_PAGES} upload pages`,
     );
   });
 
