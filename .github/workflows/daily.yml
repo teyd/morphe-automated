@@ -87,6 +87,7 @@ jobs:
           curl -sf http://127.0.0.1:8191/proxy-ca.crt -o "$RUNNER_TEMP/trawl-ca.crt"
           echo "APKMIRROR_PROXY_URL=http://127.0.0.1:8192" >> "$GITHUB_ENV"
           echo "APKMIRROR_PROXY_CA=$RUNNER_TEMP/trawl-ca.crt" >> "$GITHUB_ENV"
+          echo "TRAWL_URL=http://127.0.0.1:8191" >> "$GITHUB_ENV"
       - name: Build and publish (${{ matrix.reason }})
         run: bun src/main.ts build ${{ matrix.slug }} --publish --work-dir .work
         env:
