@@ -12,16 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Baseline, direct curl from this runner
-        run: |
-          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
-          B=https://www.apkmirror.com
-          echo "runner IP: $(curl -s https://api.ipify.org)"
-          for p in /apk/google-inc/youtube/ /apk/x-corp/twitter/ /apk/google-inc/youtube/youtube-21-16-256-release/youtube-21-16-256-3-android-apk-download/; do
-            echo "direct $(curl -s -o /dev/null -w '%{http_code}' -A "$UA" "$B$p")  $p"
-            sleep 3
-          done
-
       - name: Start trawl
         run: |
           docker run -d --name trawl --shm-size=1gb -p 8191:8191 -p 8192:8192 \
@@ -34,66 +24,13 @@ jobs:
           curl -s http://127.0.0.1:8191/health; echo
           curl -s http://127.0.0.1:8191/proxy-ca.crt -o /tmp/ca.crt && head -c 60 /tmp/ca.crt; echo
 
-      - name: Native /scrape API
-        run: |
-          B=https://www.apkmirror.com
-          for p in /apk/google-inc/youtube/ /apk/x-corp/twitter/; do
-            echo "=== scrape $p"
-            curl -s -X POST http://127.0.0.1:8191/scrape -H 'content-type: application/json' \
-              -d "{\"url\":\"$B$p\",\"maxTimeout\":120000}" -o /tmp/scrape.json -w "http %{http_code} in %{time_total}s\n"
-            jq 'del(.html, .body, .content, .cookies)' /tmp/scrape.json 2>/dev/null | head -30
-            echo "release links in html: $(jq -r '.html // .body // .content // empty' /tmp/scrape.json | grep -o 'href="/apk/[^"]*-release/"' | sort -u | wc -l)"
-            echo "cookie names: $(jq -r '[.cookies[]?.name] | join(",")' /tmp/scrape.json 2>/dev/null)"
-          done
-
-      - name: Through trawl's proxy, the full APKMirror flow
-        run: |
-          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
-          B=https://www.apkmirror.com
-          REL=/apk/google-inc/youtube/youtube-21-16-256-release/
-          VAR=${REL}youtube-21-16-256-3-android-apk-download/
-          get() { curl -s --proxy http://127.0.0.1:8192 --cacert /tmp/ca.crt -A "$UA" -e "$B/" -o "$2" -w "http %{http_code} in %{time_total}s, $(wc -c < "$2" 2>/dev/null) bytes" "$1"; }
-
-          echo "app page    : $(get $B/apk/google-inc/youtube/ /tmp/app.html)"
-          echo "  release links: $(grep -o 'href="/apk/google-inc/youtube/[^"]*-release/"' /tmp/app.html | sort -u | wc -l)"
-          echo "release page: $(get $B$REL /tmp/rel.html)"
-          echo "  variant rows: $(grep -c 'android-apk-download/' /tmp/rel.html)"
-          echo "variant page: $(get $B$VAR /tmp/var.html)"
-          BUTTON=$(grep -o 'href="[^"]*download/?key=[^"]*"' /tmp/var.html | head -1 | sed 's/href="//;s/"$//;s/&amp;/\&/g')
-          echo "  button: ${BUTTON:-<not found>}"
-          echo "download pg : $(get "$B$BUTTON" /tmp/dl.html)"
-          LINK=$(grep -o 'id="download-link"[^>]*href="[^"]*"' /tmp/dl.html | sed 's/.*href="//;s/"$//;s/&amp;/\&/g')
-          echo "  file link: ${LINK:-<not found>}"
-          if [ -n "$LINK" ]; then
-            echo "--- ranged request (first KB)"
-            curl -sL --proxy http://127.0.0.1:8192 --cacert /tmp/ca.crt -A "$UA" -e "$B$BUTTON" -r 0-1023 \
-              -o /tmp/head.bin -w "http %{http_code} in %{time_total}s, %{size_download} bytes, final %{url_effective}\n" "$B$LINK" | cut -c1-200
-            echo "magic: $(head -c 4 /tmp/head.bin | od -An -c | tr -s ' ')"
-            echo "--- full download"
-            curl -sL --proxy http://127.0.0.1:8192 --cacert /tmp/ca.crt -A "$UA" -e "$B$BUTTON" \
-              -o /tmp/yt.apk -w "http %{http_code} in %{time_total}s, %{size_download} bytes\n" "$B$LINK"
-            ls -l /tmp/yt.apk; echo "magic: $(head -c 4 /tmp/yt.apk | od -An -c | tr -s ' ')"
-            echo "sha256: $(sha256sum /tmp/yt.apk | cut -c1-64)"
-          fi
-        continue-on-error: true
-
-      - name: Is a solved cookie portable to plain curl?
-        run: |
-          UA=$(jq -r '.userAgent // .user_agent // empty' /tmp/scrape.json)
-          CF=$(jq -r '.cookies[]? | select(.name=="cf_clearance") | .value' /tmp/scrape.json)
-          echo "solved UA: ${UA:-<none>}; cf_clearance present: $([ -n "$CF" ] && echo yes || echo no)"
-          if [ -n "$CF" ]; then
-            V=https://www.apkmirror.com/apk/google-inc/youtube/youtube-21-16-256-release/youtube-21-16-256-3-android-apk-download/
-            echo "plain curl with the cookie: $(curl -s -o /dev/null -w '%{http_code}' -A "$UA" -H "Cookie: cf_clearance=$CF" $V)"
-          fi
-        continue-on-error: true
-
       - name: Uptodown, can trawl get past the download gate?
         run: |
           UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
-          P="--proxy http://127.0.0.1:8192 --cacert /tmp/ca.crt -A $UA"
+          ut() { curl -s --proxy http://127.0.0.1:8192 --cacert /tmp/ca.crt -A "$UA" "$@"; }
           for slug in youtube youtube-music reddit twitter instagram; do
-            echo "versions page $slug: $(curl -s $P -o /tmp/ut-$slug.html -w 'http %{http_code}' https://$slug.en.uptodown.com/android/versions)"
+            echo "versions page $slug (via proxy): $(ut -o /tmp/ut-$slug.html -w 'http %{http_code}' https://$slug.en.uptodown.com/android/versions)"
+            echo "versions page $slug (direct)   : $(curl -s -o /dev/null -w 'http %{http_code}' -A "$UA" https://$slug.en.uptodown.com/android/versions)"
           done
           ID=$(grep -o 'data-version-id="[0-9]*"' /tmp/ut-youtube.html | head -1 | grep -o '[0-9]*')
           echo "youtube version id: $ID"
