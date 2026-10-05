@@ -11,6 +11,7 @@ import { runPatch } from "../patch/morphe.ts";
 import { publishRelease } from "../release/publish.ts";
 import { apkAssetName } from "../release/naming.ts";
 import { fetchVerified } from "../services/artifacts.ts";
+import { makeCurlWeb } from "../services/Curl.ts";
 import { gpgVerify } from "../services/gpg.ts";
 import { Web, makeWeb } from "../services/Web.ts";
 import { sha256Hex } from "../util/hash.ts";
@@ -65,7 +66,8 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
     bundles.push(file);
   }
 
-  const mirror = yield* makeWeb(APKMIRROR_WEB_OPTIONS);
+  // APKMirror refuses Bun's TLS fingerprint on download pages but accepts curl.
+  const mirror = yield* makeCurlWeb(APKMIRROR_WEB_OPTIONS);
   const uptodown = yield* makeWeb({ headers: { "user-agent": BROWSER_UA } });
   yield* Effect.logInfo(`[${app.slug}] fetching ${app.config.package} ${plan.inputs.appVersion}`);
   const stock = yield* fetchApk([apkMirrorSource(mirror), uptodownSource(uptodown)], {
