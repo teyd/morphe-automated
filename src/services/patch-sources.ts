@@ -7,12 +7,11 @@ import { stripV } from "../domain/version.ts";
 import { selectRelease } from "../plan/select-release.ts";
 import { GitHub } from "./GitHub.ts";
 
-export interface ResolvedBundle {
-  readonly source: string;
+export interface ResolvedAsset {
   readonly repo: string;
   readonly tag: string;
-  readonly mppName: string;
-  readonly mppUrl: string;
+  readonly assetName: string;
+  readonly assetUrl: string;
   /** From the digest GitHub computed when the asset was uploaded. */
   readonly sha256: string;
   readonly signatureUrl: string | undefined;
@@ -20,40 +19,43 @@ export interface ResolvedBundle {
   readonly successorTag: string | undefined;
 }
 
+export interface ResolvedBundle extends ResolvedAsset {
+  readonly source: string;
+}
+
 const isMpp = (name: string) => name.endsWith(".mpp");
 
 const publishedAt = (release: Release) => Date.parse(release.published_at ?? "");
 
-export const resolveBundle = Effect.fn("resolveBundle")(function* (
-  name: string,
-  source: SourceConfig,
+/** Newest stable release past the cooldown that has a matching asset, with its verified digest. */
+export const resolveReleaseAsset = Effect.fn("resolveReleaseAsset")(function* (
+  repo: string,
+  cooldownHours: number,
+  hasAsset: (name: string) => boolean,
   now: number,
 ) {
   const github = yield* GitHub;
-  const releases = yield* github.releases(source.repo);
+  const releases = yield* github.releases(repo);
 
   const chosen = selectRelease(releases, {
     now,
-    cooldownMs: source.cooldown_hours * 3_600_000,
-    hasAsset: isMpp,
+    cooldownMs: cooldownHours * 3_600_000,
+    hasAsset,
   });
   if (chosen === undefined) {
     return yield* new NoEligibleRelease({
-      repo: source.repo,
-      message: `no stable release with an .mpp asset older than ${source.cooldown_hours}h`,
+      repo,
+      message: `no stable release with a matching asset older than ${cooldownHours}h`,
     });
   }
 
-  const mpp = chosen.assets.find((asset) => isMpp(asset.name));
-  if (mpp === undefined) {
-    return yield* new NoEligibleRelease({
-      repo: source.repo,
-      message: "release has no .mpp asset",
-    });
+  const asset = chosen.assets.find((candidate) => hasAsset(candidate.name));
+  if (asset === undefined) {
+    return yield* new NoEligibleRelease({ repo, message: "release has no matching asset" });
   }
-  if (mpp.digest === null || !mpp.digest.startsWith("sha256:")) {
+  if (asset.digest === null || !asset.digest.startsWith("sha256:")) {
     return yield* new GitHubError({
-      message: `${source.repo}@${chosen.tag_name}: GitHub reports no sha256 digest for ${mpp.name}; refusing to use an unverifiable asset`,
+      message: `${repo}@${chosen.tag_name}: GitHub reports no sha256 digest for ${asset.name}; refusing to use an unverifiable asset`,
     });
   }
 
@@ -64,18 +66,26 @@ export const resolveBundle = Effect.fn("resolveBundle")(function* (
     )
     .sort((a, b) => publishedAt(a) - publishedAt(b))[0];
 
-  const signature = chosen.assets.find((asset) => asset.name === `${mpp.name}.asc`);
+  const signature = chosen.assets.find((candidate) => candidate.name === `${asset.name}.asc`);
 
   return {
-    source: name,
-    repo: source.repo,
+    repo,
     tag: chosen.tag_name,
-    mppName: mpp.name,
-    mppUrl: mpp.browser_download_url,
-    sha256: mpp.digest.slice("sha256:".length).toLowerCase(),
+    assetName: asset.name,
+    assetUrl: asset.browser_download_url,
+    sha256: asset.digest.slice("sha256:".length).toLowerCase(),
     signatureUrl: signature?.browser_download_url,
     successorTag: successor?.tag_name,
-  } satisfies ResolvedBundle;
+  } satisfies ResolvedAsset;
+});
+
+export const resolveBundle = Effect.fn("resolveBundle")(function* (
+  name: string,
+  source: SourceConfig,
+  now: number,
+) {
+  const asset = yield* resolveReleaseAsset(source.repo, source.cooldown_hours, isMpp, now);
+  return { source: name, ...asset } satisfies ResolvedBundle;
 });
 
 const decodeJson = <S extends Schema.Constraint & { readonly DecodingServices: never }>(
