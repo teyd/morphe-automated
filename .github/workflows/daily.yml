@@ -71,6 +71,22 @@ jobs:
           persist-credentials: false
       - uses: jdx/mise-action@2d8d4cafcbd33be2ea37d2b6f5ad595363d1f1ca # v5.1.1
       - run: mise run install
+      # APKMirror's Cloudflare rejects plain requests from GitHub's IPs. trawl answers the challenges; the
+      # build sends only APKMirror traffic through it, and its CA is trusted by that one curl alone.
+      # Bound to localhost, and the container sees none of the signing secrets.
+      - name: Start trawl
+        run: |
+          docker run -d --name trawl --shm-size=1gb \
+            -p 127.0.0.1:8191:8191 -p 127.0.0.1:8192:8192 \
+            -e SESSION_CACHE_DRIVER=memory -e MITM_ENABLED=true \
+            ghcr.io/germondai/trawl:1.7.0@sha256:0f1bc8b88edb21dcc10a386bbcc1b852174fa2078dc6fa209c53170be303ebd0
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8191/health >/dev/null && break
+            sleep 3
+          done
+          curl -sf http://127.0.0.1:8191/proxy-ca.crt -o "$RUNNER_TEMP/trawl-ca.crt"
+          echo "APKMIRROR_PROXY_URL=http://127.0.0.1:8192" >> "$GITHUB_ENV"
+          echo "APKMIRROR_PROXY_CA=$RUNNER_TEMP/trawl-ca.crt" >> "$GITHUB_ENV"
       - name: Build and publish (${{ matrix.reason }})
         run: bun src/main.ts build ${{ matrix.slug }} --publish --work-dir .work
         env:
@@ -79,7 +95,12 @@ jobs:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      - name: trawl logs
+        if: failure()
+        run: docker logs trawl 2>&1 | tail -80 | cut -c1-220
+      # Provenance attestations need a public repository (or Enterprise); never fail a published build over it.
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        continue-on-error: true
         with:
           subject-path: .work/${{ matrix.slug }}/patched.apk
 
