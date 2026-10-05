@@ -3,7 +3,6 @@ import type { GitHubError } from "../domain/errors.ts";
 import type { Release } from "../domain/github.ts";
 import { BuildManifest } from "../domain/manifest.ts";
 import { GitHub } from "../services/GitHub.ts";
-import { Web } from "../services/Web.ts";
 import { MANIFEST_ASSET, tagBelongsTo } from "./naming.ts";
 
 const publishedAt = (release: Release) => Date.parse(release.published_at ?? "");
@@ -31,8 +30,6 @@ export const previousBuild = Effect.fn("previousBuild")(function* (
 ) {
   if (repo === undefined) return undefined;
   const github = yield* GitHub;
-  const web = yield* Web;
-
   const releases = yield* github.releases(repo);
 
   const asset = releasesOf(releases, slug)
@@ -41,7 +38,7 @@ export const previousBuild = Effect.fn("previousBuild")(function* (
 
   if (asset === undefined) return undefined;
 
-  const json = yield* web.json(asset.browser_download_url).pipe(Effect.option);
+  const json = yield* github.assetJson(repo, asset.id).pipe(Effect.option);
 
   if (Option.isNone(json)) return undefined;
   const manifest = yield* Schema.decodeUnknownEffect(BuildManifest)(json.value).pipe(Effect.option);

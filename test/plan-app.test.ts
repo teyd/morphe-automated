@@ -6,7 +6,6 @@ import type { Release } from "../src/domain/github.ts";
 import type { BuildManifest } from "../src/domain/manifest.ts";
 import { MANIFEST_ASSET } from "../src/release/naming.ts";
 import { GitHub } from "../src/services/GitHub.ts";
-import { Web } from "../src/services/Web.ts";
 import { planApp } from "../src/pipeline/plan.ts";
 
 const NOW = Date.parse("2026-10-05T04:17:00Z");
@@ -24,6 +23,7 @@ const release = (tag: string, publishedAt: string, assetName: string, hex: strin
   body: null,
   assets: [
     {
+      id: 1,
       name: assetName,
       size: 1,
       digest: digest(hex),
@@ -106,14 +106,10 @@ const world = (previous: BuildManifest | undefined, patchesTag = "v1.45.0") => {
             ),
           ),
         rawFile: () => Effect.succeed(patchesList.replace('"1.45.0"', `"${patchesTag.slice(1)}"`)),
-      }),
-    ),
-    Layer.succeed(
-      Web,
-      Web.of({
-        text: () => Effect.die("unused"),
-        json: () => Effect.succeed(previous),
-        download: () => Effect.die("unused"),
+        assetJson: () =>
+          previous === undefined
+            ? Effect.die(new Error("no previous build"))
+            : Effect.succeed(previous),
       }),
     ),
   );

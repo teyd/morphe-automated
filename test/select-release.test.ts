@@ -16,7 +16,7 @@ const release = (tag: string, publishedAt: string, extra: Partial<Release> = {})
   html_url: `https://example.test/${tag}`,
   body: null,
   assets: [
-    { name: `patches-${tag}.mpp`, size: 1, digest: null, browser_download_url: "https://x" },
+    { id: 1, name: `patches-${tag}.mpp`, size: 1, digest: null, browser_download_url: "https://x" },
   ],
   ...extra,
 });

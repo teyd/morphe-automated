@@ -13,7 +13,6 @@ import {
 import { previousBuild, releasesOf, releasesToPrune } from "../src/release/state.ts";
 import { GitHub } from "../src/services/GitHub.ts";
 import { Shell } from "../src/services/Shell.ts";
-import { Web } from "../src/services/Web.ts";
 
 const release = (
   tag: string,
@@ -28,7 +27,8 @@ const release = (
   published_at: publishedAt,
   html_url: "",
   body: null,
-  assets: assets.map((name) => ({
+  assets: assets.map((name, index) => ({
+    id: index + 1,
     name,
     size: 1,
     digest: null,
@@ -83,26 +83,23 @@ describe("releasesOf / releasesToPrune", () => {
 });
 
 describe("previousBuild", () => {
-  const github = (list: ReadonlyArray<Release>) =>
+  const github = (list: ReadonlyArray<Release>, manifest: Schema.Json | undefined) =>
     Layer.succeed(
       GitHub,
-      GitHub.of({ releases: () => Effect.succeed(list), rawFile: () => Effect.die("unused") }),
-    );
-
-  const web = (json: Schema.Json) =>
-    Layer.succeed(
-      Web,
-      Web.of({
-        text: () => Effect.die("unused"),
-        json: () => Effect.succeed(json),
-        download: () => Effect.die("unused"),
+      GitHub.of({
+        releases: () => Effect.succeed(list),
+        rawFile: () => Effect.die("unused"),
+        assetJson: (repo, assetId) =>
+          manifest === undefined || assetId !== 1
+            ? Effect.die(new Error(`unexpected asset read ${repo} ${assetId}`))
+            : Effect.succeed(manifest),
       }),
     );
 
   it.effect("reads the newest manifest", () =>
     Effect.gen(function* () {
       const result = yield* previousBuild("o/r", "youtube").pipe(
-        Effect.provide(Layer.mergeAll(github(releases), web(manifest))),
+        Effect.provide(github(releases, manifest)),
       );
 
       assert.strictEqual(result?.fingerprint, "a1b2c3d4e5f6");
@@ -113,10 +110,10 @@ describe("previousBuild", () => {
     "treats a missing repository, release or unreadable manifest as no previous build",
     () =>
       Effect.gen(function* () {
-        const none = Layer.mergeAll(github([]), web(manifest));
+        const none = github([], manifest);
         assert.isUndefined(yield* previousBuild(undefined, "youtube").pipe(Effect.provide(none)));
         assert.isUndefined(yield* previousBuild("o/r", "youtube").pipe(Effect.provide(none)));
-        const garbage = Layer.mergeAll(github(releases), web({ not: "a manifest" }));
+        const garbage = github(releases, { not: "a manifest" });
         assert.isUndefined(yield* previousBuild("o/r", "youtube").pipe(Effect.provide(garbage)));
       }),
   );
@@ -184,6 +181,7 @@ describe("publishing", () => {
           GitHub.of({
             releases: () => Effect.succeed(releases),
             rawFile: () => Effect.die("unused"),
+            assetJson: () => Effect.die("unused"),
           }),
         ),
         Path.layer,

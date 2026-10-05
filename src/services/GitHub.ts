@@ -8,6 +8,11 @@ export interface GitHubClient {
   readonly releases: (repo: string) => Effect.Effect<ReadonlyArray<Release>, GitHubError>;
   /** Contents of a file in a repo at a tag or branch. */
   readonly rawFile: (repo: string, ref: string, path: string) => Effect.Effect<string, GitHubError>;
+  /**
+   * A release asset's JSON contents, read through the API so it also works for private repositories,
+   * whose `browser_download_url` rejects unauthenticated requests.
+   */
+  readonly assetJson: (repo: string, assetId: number) => Effect.Effect<Schema.Json, GitHubError>;
 }
 
 const fromWeb = (error: WebError) =>
@@ -54,7 +59,16 @@ export class GitHub extends Context.Service<GitHub, GitHubClient>()("morphe-auto
           .pipe(Effect.mapError(fromWeb));
       });
 
-      return GitHub.of({ releases, rawFile });
+      const assetJson = Effect.fn("GitHub.assetJson")(function* (repo: string, assetId: number) {
+        return yield* web
+          .json(`https://api.github.com/repos/${repo}/releases/assets/${assetId}`, {
+            ...apiHeaders,
+            accept: "application/octet-stream",
+          })
+          .pipe(Effect.mapError(fromWeb));
+      });
+
+      return GitHub.of({ releases, rawFile, assetJson });
     }),
-  ).pipe(Layer.provide(Web.layer));
+  );
 }

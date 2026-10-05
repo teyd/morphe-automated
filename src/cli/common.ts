@@ -53,6 +53,9 @@ const apkMirrorWeb = Layer.unwrap(
   }).pipe(Effect.orDie),
 );
 
-export const runtimeLayer = Layer.mergeAll(GitHub.layer, Web.layer, Shell.layer, apkMirrorWeb).pipe(
-  Layer.provideMerge(BunServices.layer),
-);
+export const runtimeLayer = Layer.mergeAll(
+  GitHub.layer.pipe(Layer.provide(Web.layer)),
+  Web.layer,
+  Shell.layer,
+  apkMirrorWeb,
+).pipe(Layer.provideMerge(BunServices.layer));

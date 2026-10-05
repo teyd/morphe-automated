@@ -50,6 +50,7 @@ describe("takedownApp", () => {
                 release("youtube-21.16.256-morphe-1.45.0-ccccccc"),
               ]),
             rawFile: () => Effect.die("unused"),
+            assetJson: () => Effect.die("unused"),
           }),
         ),
         Layer.succeed(

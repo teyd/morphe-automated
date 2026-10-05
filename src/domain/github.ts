@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 
 export const ReleaseAsset = Schema.Struct({
+  id: Schema.Number,
   name: Schema.String,
   size: Schema.Number,
   /** `sha256:<hex>`, computed by GitHub on upload. Missing on very old assets. */

@@ -25,6 +25,7 @@ const release = (
   body: null,
   assets: [
     {
+      id: 1,
       name: `patches-${tag.slice(1)}.mpp`,
       size: 1,
       digest,
@@ -45,6 +46,7 @@ const fakeGitHub = (releases: ReadonlyArray<Release>, files: Record<string, stri
           ? Effect.die(new Error(`unexpected fetch ${repo}@${ref}:${path}`))
           : Effect.succeed(body);
       },
+      assetJson: () => Effect.die("unused"),
     }),
   );
 

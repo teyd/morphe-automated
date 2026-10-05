@@ -1,4 +1,4 @@
-import { Context, Effect, FileSystem, Layer, Schedule, Semaphore } from "effect";
+import { Context, Effect, FileSystem, Layer, Schedule, Semaphore, type Schema } from "effect";
 import {
   FetchHttpClient,
   HttpClient,
@@ -52,7 +52,7 @@ export interface WebClient {
   readonly json: (
     url: string,
     headers?: Readonly<Record<string, string>>,
-  ) => Effect.Effect<unknown, WebError>;
+  ) => Effect.Effect<Schema.Json, WebError>;
   readonly download: (
     url: string,
     destination: string,
