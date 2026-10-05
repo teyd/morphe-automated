@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.work/
+*.apk
+*.apkm
+*.xapk
+*.apks
+*.mpp
+*.jar
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.bks
+.env
+.env.*
+!.env.example

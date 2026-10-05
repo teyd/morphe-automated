@@ -1,0 +1,35 @@
+[tools]
+bun = "1.4.2"
+node = "26.10.0"
+java = "temurin-21"
+
+[env]
+WORK_DIR = ".work"
+
+[tasks.install]
+description = "Install dependencies"
+run = "bun install --frozen-lockfile"
+
+[tasks.check]
+description = "Format, lint and type check"
+run = "bunx vp check"
+
+[tasks.test]
+description = "Run unit tests"
+run = "bunx vp test run"
+
+[tasks.check-updates]
+description = "Print which apps need a rebuild"
+run = "bun src/main.ts check"
+
+[tasks.build]
+description = "Build one app: mise run build youtube"
+run = "bun src/main.ts build"
+
+[tasks."keystore:init"]
+description = "Generate your personal signing keystore and print the secrets to set"
+run = "bun src/main.ts keystore init"
+
+[tasks.takedown]
+description = "Delete all releases of an app and disable it: mise run takedown x"
+run = "bun src/main.ts takedown"
