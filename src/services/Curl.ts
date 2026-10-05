@@ -1,4 +1,4 @@
-import { Effect, FileSystem, Semaphore } from "effect";
+import { Effect, FileSystem, Semaphore, type Schema } from "effect";
 import { WebError } from "../domain/errors.ts";
 import { sha256Hex } from "../util/hash.ts";
 import { Shell } from "./Shell.ts";
@@ -18,7 +18,7 @@ const headerArgs = (headers: Readonly<Record<string, string>>): string[] =>
   });
 
 /** Split `curl --write-out '\n%{http_code}'` output into body and status. */
-export const splitStatus = (output: string): { readonly body: string; readonly status: number } => {
+export const splitStatus = (output: string) => {
   const cut = output.lastIndexOf("\n");
 
   return { body: cut < 0 ? "" : output.slice(0, cut), status: Number(output.slice(cut + 1)) };
@@ -99,7 +99,7 @@ export const makeCurlWeb = Effect.fn("makeCurlWeb")(function* (options: WebOptio
       text(url, headers).pipe(
         Effect.flatMap((body) =>
           Effect.try({
-            try: () => JSON.parse(body) as unknown,
+            try: (): Schema.Json => JSON.parse(body),
             catch: (cause) => new WebError({ url, message: `invalid JSON: ${String(cause)}` }),
           }),
         ),

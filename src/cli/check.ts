@@ -4,13 +4,15 @@ import { loadConfig } from "../config/load.ts";
 import { planApp, type AppPlan } from "../pipeline/plan.ts";
 import { annotate, configDirectory, repository } from "./common.ts";
 
-export interface CheckReport {
-  readonly build: ReadonlyArray<{
-    readonly slug: string;
-    readonly name: string;
-    readonly reason: string;
-  }>;
-  readonly errors: ReadonlyArray<{ readonly slug: string; readonly message: string }>;
+interface BuildItem {
+  readonly slug: string;
+  readonly name: string;
+  readonly reason: string;
+}
+
+interface ErrorItem {
+  readonly slug: string;
+  readonly message: string;
 }
 
 const describe = (plan: AppPlan) =>
@@ -51,13 +53,8 @@ export const check = Command.make(
 
     const now = Date.now();
 
-    const report: {
-      build: CheckReport["build"][number][];
-      errors: CheckReport["errors"][number][];
-    } = {
-      build: [],
-      errors: [],
-    };
+    const toBuild: BuildItem[] = [];
+    const failed: ErrorItem[] = [];
 
     for (const candidate of apps) {
       const result = yield* Effect.result(planApp(candidate, loaded, { now, repo, force }));
@@ -66,7 +63,7 @@ export const check = Command.make(
         const message =
           result.failure instanceof Error ? result.failure.message : String(result.failure);
 
-        report.errors.push({ slug: candidate.slug, message });
+        failed.push({ slug: candidate.slug, message });
         yield* annotate("error", candidate.slug, message);
         continue;
       }
@@ -74,7 +71,7 @@ export const check = Command.make(
       yield* Console.log(describe(result.success));
 
       if (result.success.decision.build) {
-        report.build.push({
+        toBuild.push({
           slug: candidate.slug,
           name: candidate.config.name,
           reason: result.success.decision.reason,
@@ -83,7 +80,7 @@ export const check = Command.make(
     }
 
     yield* Console.log(
-      `\n${report.build.length} to build, ${apps.length - report.build.length - report.errors.length} up to date, ${report.errors.length} failed`,
+      `\n${toBuild.length} to build, ${apps.length - toBuild.length - failed.length} up to date, ${failed.length} failed`,
     );
 
     if (githubOutput) {
@@ -91,7 +88,7 @@ export const check = Command.make(
       const fs = yield* FileSystem.FileSystem;
       yield* fs.writeFileString(
         path,
-        `matrix=${JSON.stringify({ include: report.build })}\nerrors=${report.errors.length}\n`,
+        `matrix=${JSON.stringify({ include: toBuild })}\nerrors=${failed.length}\n`,
         { flag: "a" },
       );
     }

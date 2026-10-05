@@ -13,12 +13,9 @@ const root = Command.make("morphe-automated").pipe(
   Command.withSubcommands([check, build, obtainium, takedown, keystore]),
 );
 
-const describeError = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
-
 root.pipe(
   Command.run({ version: "0.1.0" }),
   Effect.provide(runtimeLayer),
-  Effect.tapError((error) => Console.error(`error: ${describeError(error)}`)),
+  Effect.tapError((error) => Console.error(`error: ${error.message}`)),
   BunRuntime.runMain({ disableErrorReporting: true }),
 );

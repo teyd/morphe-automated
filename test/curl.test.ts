@@ -16,9 +16,9 @@ const scripted = (outputs: ReadonlyArray<string | ShellError>, fileBytes = new U
             calls.push([command, ...args]);
             const next = outputs[Math.min(calls.length - 1, outputs.length - 1)]!;
 
-            return typeof next === "string"
-              ? Effect.succeed({ stdout: next, stderr: "" })
-              : Effect.fail(next);
+            return next instanceof ShellError
+              ? Effect.fail(next)
+              : Effect.succeed({ stdout: next, stderr: "" });
           }),
       }),
     ),

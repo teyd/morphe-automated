@@ -20,12 +20,12 @@ const BUTTON = `${VARIANT}download/?key=6cd9e7c91b146a4e052075d88c75ee84ca752924
 const FILE =
   "/wp-content/themes/APKMirror/download.php?id=13517428&key=69957b1cd3a8561fa32b79cdc596bf459f4137b3&forcebaseapk=true";
 
-const pages: Record<string, string> = {
-  "/apk/google-inc/youtube/": `<a href="${RELEASE}">21.16.256</a>`,
-  [RELEASE]: fixture("release-youtube-21.16.256.html"),
-  [VARIANT]: fixture("variant-youtube-21.16.256-apk.html"),
-  [BUTTON]: fixture("download-youtube-21.16.256-apk.html"),
-};
+const pages = new Map([
+  ["/apk/google-inc/youtube/", `<a href="${RELEASE}">21.16.256</a>`],
+  [RELEASE, fixture("release-youtube-21.16.256.html")],
+  [VARIANT, fixture("variant-youtube-21.16.256-apk.html")],
+  [BUTTON, fixture("download-youtube-21.16.256-apk.html")],
+]);
 
 const fakeWeb = (
   overrides: Record<string, string> = {},
@@ -37,7 +37,7 @@ const fakeWeb = (
     text: (url) => {
       const path = url.replace(BASE, "");
       requested.push(path);
-      const body = overrides[path] ?? pages[path];
+      const body = overrides[path] ?? pages.get(path);
 
       return body === undefined
         ? Effect.fail(new WebError({ url, status: 404, message: "HTTP 404" }))

@@ -1,5 +1,5 @@
 import { Effect, FileSystem, Path, Schema } from "effect";
-import { parse as parseToml } from "smol-toml";
+import { parse as parseToml, type TomlTable } from "smol-toml";
 import { ConfigError } from "../domain/errors.ts";
 import { sha256Hex, stableStringify } from "../util/hash.ts";
 import { AppConfig, SigningFile, SourcesFile, type SourceConfig } from "./schema.ts";
@@ -26,7 +26,7 @@ const toml = (label: string, text: string) =>
 const decode = <S extends Schema.Constraint & { readonly DecodingServices: never }>(
   label: string,
   schema: S,
-  input: unknown,
+  input: TomlTable,
 ) =>
   Schema.decodeUnknownEffect(schema)(input).pipe(
     Effect.mapError((error) => new ConfigError({ message: `${label}: ${error.message}` })),

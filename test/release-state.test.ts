@@ -1,5 +1,5 @@
 import { assert, describe, it } from "@effect/vitest";
-import { Effect, FileSystem, Layer, Path } from "effect";
+import { Effect, FileSystem, Layer, Path, type Schema } from "effect";
 import type { Release } from "../src/domain/github.ts";
 import type { BuildManifest, FingerprintInputs } from "../src/domain/manifest.ts";
 import { MANIFEST_ASSET } from "../src/release/naming.ts";
@@ -89,7 +89,7 @@ describe("previousBuild", () => {
       GitHub.of({ releases: () => Effect.succeed(list), rawFile: () => Effect.die("unused") }),
     );
 
-  const web = (json: unknown) =>
+  const web = (json: Schema.Json) =>
     Layer.succeed(
       Web,
       Web.of({

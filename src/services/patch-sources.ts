@@ -98,7 +98,7 @@ const decodeJson = <S extends Schema.Constraint & { readonly DecodingServices: n
   text: string,
 ) =>
   Effect.try({
-    try: () => JSON.parse(text) as unknown,
+    try: (): Schema.Json => JSON.parse(text),
     catch: (cause) => new GitHubError({ message: `${label}: invalid JSON: ${String(cause)}` }),
   }).pipe(
     Effect.flatMap((json) => Schema.decodeUnknownEffect(schema)(json)),
