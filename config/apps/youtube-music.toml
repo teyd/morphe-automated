@@ -1,0 +1,7 @@
+name = "YouTube Music"
+package = "com.google.android.apps.youtube.music"
+sources = ["morphe"]
+
+[download]
+apkmirror = "google-inc/youtube-music"
+uptodown = "youtube-music"

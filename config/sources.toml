@@ -1,0 +1,21 @@
+# Patch repositories. Any repo that publishes `.mpp` bundles as GitHub releases can be added here.
+# Only stable releases are ever used. `cooldown_hours` is how long a release must have been
+# public before we pick it up, which skips the quick hotfix releases some repos ship.
+
+[sources.morphe]
+repo = "MorpheApp/morphe-patches"
+versions = "patches-list"
+cooldown_hours = 6
+
+[sources.piko]
+repo = "crimera/piko"
+versions = "patches-list"
+cooldown_hours = 6
+
+# piko-newx ships several releases a day (sometimes minutes apart), so the cooldown matters most here.
+[sources.piko-newx]
+repo = "crimera/piko-newx"
+versions = "bundle"
+cooldown_hours = 6
+# To require a valid signature on every bundle, add the maintainer's public key to
+# config/keys/ and set: gpg_public_key = "keys/piko-newx.asc"

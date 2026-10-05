@@ -1,0 +1,68 @@
+import { readFileSync, readdirSync } from "node:fs";
+import { Effect } from "effect";
+import { describe, expect, it } from "vite-plus/test";
+import { configHash, parseApp, parseSources } from "../src/config/load.ts";
+
+const read = (file: string) => readFileSync(new URL(`../config/${file}`, import.meta.url), "utf8");
+
+describe("shipped config", () => {
+  it("parses sources.toml", async () => {
+    const sources = await Effect.runPromise(parseSources(read("sources.toml")));
+    expect(Object.keys(sources).sort()).toEqual(["morphe", "piko", "piko-newx"]);
+    expect(sources["piko-newx"]?.versions).toBe("bundle");
+    expect(sources.morphe?.cooldown_hours).toBe(6);
+  });
+
+  it("parses every app and references only known sources", async () => {
+    const sources = await Effect.runPromise(parseSources(read("sources.toml")));
+    const files = readdirSync(new URL("../config/apps/", import.meta.url)).filter((f) =>
+      f.endsWith(".toml"),
+    );
+    expect(files.length).toBeGreaterThanOrEqual(5);
+    for (const file of files) {
+      const app = await Effect.runPromise(
+        parseApp(file.replace(".toml", ""), read(`apps/${file}`)),
+      );
+      for (const source of app.config.sources) expect(sources).toHaveProperty(source);
+    }
+  });
+});
+
+describe("app defaults", () => {
+  it("fills in arm64, stable-only and empty patch selection", async () => {
+    const app = await Effect.runPromise(parseApp("youtube", read("apps/youtube.toml")));
+    expect(app.config.enabled).toBe(true);
+    expect(app.config.arch).toBe("arm64-v8a");
+    expect(app.config.allow_experimental).toBe(false);
+    expect(app.config.patches).toEqual({ enable: [], disable: [], exclusive: false, options: {} });
+  });
+
+  it("rejects an app without sources", async () => {
+    const result = await Effect.runPromise(
+      Effect.flip(parseApp("bad", 'name = "Bad"\npackage = "x"\nsources = []\n[download]\n')),
+    );
+    expect(result._tag).toBe("ConfigError");
+  });
+
+  it("rejects invalid TOML", async () => {
+    const result = await Effect.runPromise(Effect.flip(parseSources("[[[")));
+    expect(result._tag).toBe("ConfigError");
+  });
+});
+
+describe("configHash", () => {
+  it("changes with patch selection but not with cosmetic fields", async () => {
+    const base = await Effect.runPromise(parseApp("youtube", read("apps/youtube.toml")));
+    const renamed = await Effect.runPromise(
+      parseApp("youtube", read("apps/youtube.toml").replace('name = "YouTube"', 'name = "YT"')),
+    );
+    const patched = await Effect.runPromise(
+      parseApp(
+        "youtube",
+        read("apps/youtube.toml").replace("[download]", '[patches]\ndisable = ["x"]\n[download]'),
+      ),
+    );
+    expect(configHash(renamed.config)).toBe(configHash(base.config));
+    expect(configHash(patched.config)).not.toBe(configHash(base.config));
+  });
+});

@@ -1,0 +1,7 @@
+name = "YouTube"
+package = "com.google.android.youtube"
+sources = ["morphe"]
+
+[download]
+apkmirror = "google-inc/youtube"
+uptodown = "youtube"

@@ -1,0 +1,7 @@
+name = "Reddit"
+package = "com.reddit.frontpage"
+sources = ["morphe"]
+
+[download]
+apkmirror = "redditinc/reddit"
+uptodown = "reddit"

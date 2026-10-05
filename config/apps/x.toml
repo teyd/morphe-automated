@@ -1,0 +1,7 @@
+name = "X"
+package = "com.twitter.android"
+sources = ["piko-newx"]
+
+[download]
+apkmirror = "x-corp/twitter"
+uptodown = "twitter"
