@@ -28,6 +28,48 @@ export const findReleaseLink = (
     .find((href) => pattern.test(href));
 };
 
+const releaseHrefs = (html: string, appPath: string): string[] => {
+  const pattern = new RegExp(`^/apk/${escapeRegExp(appPath)}/([^/]+)-release/$`);
+  return parse(html)
+    .querySelectorAll("a")
+    .map((anchor) => anchor.getAttribute("href") ?? "")
+    .filter((href) => pattern.test(href));
+};
+
+/**
+ * The name APKMirror puts before the version in release URLs (`youtube` in `youtube-21-16-256-release`),
+ * learned from the release links on the page: the most common one wins, since a renamed app
+ * keeps its old releases under the old name. It is not always the app's own slug (`x` for twitter).
+ */
+export const releasePrefix = (html: string, appPath: string): string | undefined => {
+  const pattern = new RegExp(`^/apk/${escapeRegExp(appPath)}/(.+?)-\\d[\\w-]*-release/$`);
+  const counts = new Map<string, number>();
+  for (const href of releaseHrefs(html, appPath)) {
+    const prefix = pattern.exec(href)?.[1];
+    if (prefix !== undefined) counts.set(prefix, (counts.get(prefix) ?? 0) + 1);
+  }
+  return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+};
+
+/** URL a release page should have, if it exists. */
+export const guessReleasePath = (appPath: string, prefix: string, version: string): string =>
+  `/apk/${appPath}/${prefix}-${slugify(version)}-release/`;
+
+/** Category id of the app's full upload history (`/uploads/?appcategory=<id>`). */
+export const findUploadsCategory = (html: string): string | undefined => {
+  for (const anchor of parse(html).querySelectorAll("a")) {
+    const href = anchor.getAttribute("href") ?? "";
+    const match = /^\/uploads\/\?appcategory=([\w-]+)$/.exec(href);
+    if (match?.[1] !== undefined) return match[1];
+  }
+  return undefined;
+};
+
+export const uploadsPath = (category: string, page: number): string =>
+  page === 1
+    ? `/uploads/?appcategory=${category}`
+    : `/uploads/page/${page}/?appcategory=${category}`;
+
 /** Variant rows (one per APK/bundle build) on a release page. */
 export const parseVariants = (releaseHtml: string): ReadonlyArray<Variant> => {
   const variants: Variant[] = [];
