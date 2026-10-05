@@ -21,6 +21,11 @@ export class NoEligibleRelease extends Schema.TaggedError<NoEligibleRelease>()(
   { repo: Schema.String, message: Schema.String },
 ) {}
 
+export class NoCompatibleVersion extends Schema.TaggedError<NoCompatibleVersion>()(
+  "NoCompatibleVersion",
+  { packageName: Schema.String, message: Schema.String },
+) {}
+
 export class VerificationError extends Schema.TaggedError<VerificationError>()(
   "VerificationError",
   {
