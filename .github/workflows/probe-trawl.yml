@@ -88,6 +88,25 @@ jobs:
           fi
         continue-on-error: true
 
+      - name: Uptodown, can trawl get past the download gate?
+        run: |
+          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+          P="--proxy http://127.0.0.1:8192 --cacert /tmp/ca.crt -A $UA"
+          for slug in youtube youtube-music reddit twitter instagram; do
+            echo "versions page $slug: $(curl -s $P -o /tmp/ut-$slug.html -w 'http %{http_code}' https://$slug.en.uptodown.com/android/versions)"
+          done
+          ID=$(grep -o 'data-version-id="[0-9]*"' /tmp/ut-youtube.html | head -1 | grep -o '[0-9]*')
+          echo "youtube version id: $ID"
+          curl -s -X POST http://127.0.0.1:8191/scrape -H 'content-type: application/json' \
+            -d "{\"url\":\"https://youtube.en.uptodown.com/android/download/$ID\",\"skipHttp\":true,\"networkLogs\":true,\"maxTimeout\":120000,\"contentWaitForSelector\":\"#detail-download-button\"}" \
+            -o /tmp/ut-scrape.json -w "scrape http %{http_code} in %{time_total}s\n"
+          jq '{statusCode, tier, timings}' /tmp/ut-scrape.json | head -20
+          echo "button tag: $(jq -r '.html // empty' /tmp/ut-scrape.json | grep -o '<button id="detail-download-button"[^>]*>' | head -1 | cut -c1-300)"
+          echo "turnstile widget present: $(jq -r '.html // empty' /tmp/ut-scrape.json | grep -c 'download-turnstile-widget')"
+          echo "network entries mentioning download: $(jq -r '[.networkLogs[]? | select(.url | test("download|turnstile|post"))] | length' /tmp/ut-scrape.json)"
+          jq -r '.networkLogs[]? | select(.url | test("post-download|dw\\.uptodown|dwn")) | .url' /tmp/ut-scrape.json | head -5
+        continue-on-error: true
+
       - name: trawl logs
         if: always()
         run: docker logs trawl 2>&1 | tail -120 | cut -c1-220
