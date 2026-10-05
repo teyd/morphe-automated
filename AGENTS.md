@@ -12,6 +12,11 @@ Finish every change with `mise run check && mise run test`.
 - Keep passwords inside `Redacted`, pass them to child processes through env vars, and keep them out of logs.
 - Commit in small steps, one logical change each.
 
+## Lint
+
+- `tools/oxlint/anti-slop` is vendored and owned here (provenance in its `UPSTREAM.md`). Fix findings in the code, and change rules there deliberately; keep every rule at `error` and add no suppressions.
+- `@oxlint/plugins` is pinned to the oxlint version bundled by `vite-plus`. Bump both together.
+
 ## Gotchas
 
 - Route APKMirror through curl (`makeCurlWeb`). Cloudflare rejects Bun's `fetch` on download pages by TLS fingerprint, whatever the headers.
