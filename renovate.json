@@ -6,6 +6,11 @@
     {
       "matchManagers": ["github-actions"],
       "groupName": "github actions"
+    },
+    {
+      "matchPackageNames": ["@oxlint/plugins"],
+      "enabled": false,
+      "description": "Pinned to the oxlint bundled by vite-plus; move them together by hand."
     }
   ]
 }
