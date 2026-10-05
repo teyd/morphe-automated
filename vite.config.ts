@@ -6,6 +6,7 @@ export default defineConfig({
   },
   lint: {
     ignorePatterns: [".work/**", "node_modules/**"],
+    options: { typeAware: true, typeCheck: true },
   },
   fmt: {
     singleQuote: false,
