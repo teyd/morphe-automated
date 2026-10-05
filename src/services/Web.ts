@@ -45,6 +45,16 @@ export interface WebClient {
 const retryable = (error: WebError): boolean =>
   error.status === undefined || error.status === 429 || error.status >= 500;
 
+const retrySchedule = Schedule.max([Schedule.exponential("1 second"), Schedule.recurs(3)]).pipe(
+  Schedule.jittered,
+  Schedule.setInputType<WebError>(),
+  Schedule.while(({ input }) => retryable(input)),
+);
+
+/** Retry transient failures with jittered exponential backoff, at most 3 times. */
+export const withRetry = <A, R>(request: Effect.Effect<A, WebError, R>) =>
+  request.pipe(Effect.retry(retrySchedule));
+
 export const makeWeb = Effect.fn("makeWeb")(function* (options: WebOptions = {}) {
   const client = yield* HttpClient.HttpClient;
   const fs = yield* FileSystem.FileSystem;
@@ -77,14 +87,8 @@ export const makeWeb = Effect.fn("makeWeb")(function* (options: WebOptions = {})
         ),
     );
 
-  const retrySchedule = Schedule.max([Schedule.exponential("1 second"), Schedule.recurs(3)]).pipe(
-    Schedule.jittered,
-    Schedule.setInputType<WebError>(),
-    Schedule.while(({ input }) => retryable(input)),
-  );
-
   const request = (url: string, headers?: Readonly<Record<string, string>>) =>
-    fetchOnce(url, headers).pipe(Effect.retry(retrySchedule));
+    withRetry(fetchOnce(url, headers));
 
   const body = <A>(
     url: string,
