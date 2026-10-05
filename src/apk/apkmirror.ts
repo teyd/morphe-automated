@@ -1,5 +1,6 @@
 import { Effect, Predicate, Result } from "effect";
 import { ApkNotFound, SourceBlocked, type WebError } from "../domain/errors.ts";
+import { renderPage } from "../services/trawl.ts";
 import { looksLikeZip, type WebClient } from "../services/Web.ts";
 import {
   findDownloadButton,
@@ -43,16 +44,26 @@ const fromWeb = (error: WebError) =>
     : blocked(`${error.url}: ${error.message}`);
 
 export const apkMirrorSource = (web: WebClient): ApkSource => {
-  const page = (path: string, referer?: string) =>
-    web
-      .text(`${BASE}${path}`, referer === undefined ? undefined : { referer: `${BASE}${referer}` })
-      .pipe(
-        Effect.mapError(fromWeb),
-        Effect.filterOrFail(
-          (html) => !isChallenge(html),
-          () => blocked("Cloudflare challenge page"),
+  const page = (path: string, referer?: string) => {
+    const url = `${BASE}${path}`;
+
+    return web.text(url, referer === undefined ? undefined : { referer: `${BASE}${referer}` }).pipe(
+      Effect.mapError(fromWeb),
+      Effect.filterOrFail(
+        (html) => !isChallenge(html),
+        () => blocked("Cloudflare challenge page"),
+      ),
+      // Instagram is challenged even from residential IPs. Render that page in trawl's browser
+      // instead of giving up; other apps never hit this when the proxy's plain fetch works.
+      Effect.catchTag("SourceBlocked", (error) =>
+        renderPage(url).pipe(
+          Effect.flatMap((html) =>
+            html === undefined ? Effect.fail(error) : Effect.succeed(html),
+          ),
         ),
-      );
+      ),
+    );
+  };
 
   /**
    * Cheapest first: the app page (latest ~9 releases), then the release URL guessed from the naming
