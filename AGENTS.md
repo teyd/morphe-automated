@@ -19,7 +19,7 @@ Finish every change with `mise run check && mise run test`.
 
 ## Gotchas
 
-- Route APKMirror through curl (`makeCurlWeb`). Cloudflare rejects Bun's `fetch` on download pages by TLS fingerprint, whatever the headers.
+- Route APKMirror through curl (the `CurlWeb` service). Cloudflare rejects Bun's `fetch` on download pages by TLS fingerprint, whatever the headers.
 - piko-newx's `patches-bundle.json` describes the release before the one it is tagged with. Read it at the next release's tag.
 - Obtainium tracks the release tag and runs with version detection off, because a patched APK keeps the stock `versionName`. Every distinct build needs a distinct tag, which the fingerprint suffix provides.
 - A release's previous `build-manifest.json` is the only stored state. Keep state out of git.
