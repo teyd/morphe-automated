@@ -9,7 +9,7 @@ const webReturning = (sha256: string) =>
     Web.of({
       text: () => Effect.die("unused"),
       json: () => Effect.die("unused"),
-      download: () => Effect.succeed({ sha256, size: 3 }),
+      download: () => Effect.succeed({ sha256, size: 3, head: new Uint8Array(4) }),
     }),
   );
 

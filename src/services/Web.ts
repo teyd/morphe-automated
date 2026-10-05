@@ -17,7 +17,13 @@ export interface WebOptions {
 export interface Downloaded {
   readonly sha256: string;
   readonly size: number;
+  /** First bytes of the file, to sanity check its format. */
+  readonly head: Uint8Array;
 }
+
+/** `PK\x03\x04`: APKs, bundles and `.mpp` files are all ZIP archives. */
+export const looksLikeZip = (head: Uint8Array): boolean =>
+  head[0] === 0x50 && head[1] === 0x4b && head[2] === 0x03 && head[3] === 0x04;
 
 export interface WebClient {
   readonly text: (
@@ -102,7 +108,11 @@ export const makeWeb = Effect.fn("makeWeb")(function* (options: WebOptions = {})
           const bytes = new Uint8Array(buffer);
           return fs.writeFile(destination, bytes).pipe(
             Effect.mapError((error) => new WebError({ url, message: error.message })),
-            Effect.as({ sha256: sha256Hex(bytes), size: bytes.byteLength } satisfies Downloaded),
+            Effect.as({
+              sha256: sha256Hex(bytes),
+              size: bytes.byteLength,
+              head: bytes.slice(0, 4),
+            } satisfies Downloaded),
           );
         }),
       ),
