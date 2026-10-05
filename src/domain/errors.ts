@@ -9,6 +9,13 @@ export class GitHubError extends Schema.TaggedError<GitHubError>()("GitHubError"
   status: Schema.optional(Schema.Int),
 }) {}
 
+/** A plain HTTP failure. `status` is absent for transport-level errors. */
+export class WebError extends Schema.TaggedError<WebError>()("WebError", {
+  url: Schema.String,
+  message: Schema.String,
+  status: Schema.optional(Schema.Int),
+}) {}
+
 export class NoEligibleRelease extends Schema.TaggedError<NoEligibleRelease>()(
   "NoEligibleRelease",
   { repo: Schema.String, message: Schema.String },
