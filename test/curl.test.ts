@@ -3,8 +3,13 @@ import { Effect, Fiber, FileSystem, Layer } from "effect";
 import { TestClock } from "effect/testing";
 import { makeCurlWeb, splitStatus } from "../src/services/Curl.ts";
 import { Shell, ShellError } from "../src/services/Shell.ts";
+import type { WebOptions } from "../src/services/Web.ts";
 
-const scripted = (outputs: ReadonlyArray<string | ShellError>, fileBytes = new Uint8Array(0)) => {
+const scripted = (
+  outputs: ReadonlyArray<string | ShellError>,
+  fileBytes = new Uint8Array(0),
+  extra: WebOptions = {},
+) => {
   const calls: string[][] = [];
 
   const layer = Layer.mergeAll(
@@ -26,7 +31,7 @@ const scripted = (outputs: ReadonlyArray<string | ShellError>, fileBytes = new U
   );
 
   return {
-    web: makeCurlWeb({ headers: { "user-agent": "UA/1", accept: "text/html" } }).pipe(
+    web: makeCurlWeb({ headers: { "user-agent": "UA/1", accept: "text/html" }, ...extra }).pipe(
       Effect.provide(layer),
     ),
     calls,
@@ -126,6 +131,34 @@ describe("makeCurlWeb", () => {
     Effect.gen(function* () {
       const { web } = scripted(['{"a":1}\n200']);
       assert.deepStrictEqual(yield* (yield* web).json("https://example.test/"), { a: 1 });
+    }),
+  );
+
+  it.effect("routes through a proxy and trusts its CA only for this client", () =>
+    Effect.gen(function* () {
+      const { web, calls } = scripted(["ok\n200"], new Uint8Array(0), {
+        proxy: { url: "http://127.0.0.1:8192", caCertificate: "/tmp/ca.crt" },
+      });
+
+      yield* (yield* web).text("https://example.test/");
+      const args = calls[0]!;
+      assert.deepStrictEqual(args.slice(args.indexOf("--proxy"), args.indexOf("--proxy") + 2), [
+        "--proxy",
+        "http://127.0.0.1:8192",
+      ]);
+      assert.deepStrictEqual(args.slice(args.indexOf("--cacert"), args.indexOf("--cacert") + 2), [
+        "--cacert",
+        "/tmp/ca.crt",
+      ]);
+    }),
+  );
+
+  it.effect("passes no proxy flags by default", () =>
+    Effect.gen(function* () {
+      const { web, calls } = scripted(["ok\n200"]);
+      yield* (yield* web).text("https://example.test/");
+      assert.notInclude(calls[0]!, "--proxy");
+      assert.notInclude(calls[0]!, "--cacert");
     }),
   );
 });

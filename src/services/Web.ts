@@ -8,10 +8,18 @@ import {
 import { WebError } from "../domain/errors.ts";
 import { sha256Hex } from "../util/hash.ts";
 
+export interface WebProxy {
+  readonly url: string;
+  /** CA certificate to trust for HTTPS through a TLS-terminating proxy. */
+  readonly caCertificate?: string | undefined;
+}
+
 export interface WebOptions {
   /** Pause after every request. Needed for sites that rate limit bursts (APKMirror). */
   readonly minIntervalMs?: number;
   readonly headers?: Readonly<Record<string, string>>;
+  /** Route requests through this proxy. Only the curl client supports it. */
+  readonly proxy?: WebProxy | undefined;
 }
 
 export interface Downloaded {

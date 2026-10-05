@@ -2,7 +2,13 @@ import { Context, Effect, FileSystem, Layer, Semaphore, type Schema } from "effe
 import { WebError } from "../domain/errors.ts";
 import { sha256Hex } from "../util/hash.ts";
 import { Shell } from "./Shell.ts";
-import { withRetry, type Downloaded, type WebClient, type WebOptions } from "./Web.ts";
+import {
+  withRetry,
+  type Downloaded,
+  type WebClient,
+  type WebOptions,
+  type WebProxy,
+} from "./Web.ts";
 
 /** curl flag for a header; `user-agent` and `referer` have dedicated flags. */
 const headerArgs = (headers: Readonly<Record<string, string>>): string[] =>
@@ -16,6 +22,16 @@ const headerArgs = (headers: Readonly<Record<string, string>>): string[] =>
         return ["--header", `${name}: ${value}`];
     }
   });
+
+const proxyArgs = (proxy: WebProxy | undefined): string[] => {
+  if (proxy === undefined) return [];
+
+  const args = ["--proxy", proxy.url];
+
+  if (proxy.caCertificate !== undefined) args.push("--cacert", proxy.caCertificate);
+
+  return args;
+};
 
 /** Split `curl --write-out '\n%{http_code}'` output into body and status. */
 export const splitStatus = (output: string) => {
@@ -47,6 +63,7 @@ export const makeCurlWeb = Effect.fn("makeCurlWeb")(function* (options: WebOptio
           "--compressed",
           "--max-time",
           "900",
+          ...proxyArgs(options.proxy),
           ...headerArgs({ ...options.headers, ...headers }),
           ...args,
           url,

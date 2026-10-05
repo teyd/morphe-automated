@@ -33,7 +33,25 @@ export const annotate = (level: "warning" | "error", title: string, message: str
     ),
   );
 
-const apkMirrorWeb = CurlWeb.layer(APKMIRROR_WEB_OPTIONS).pipe(Layer.provide(Shell.layer));
+/**
+ * APKMirror goes through an HTTP proxy when `APKMIRROR_PROXY_URL` is set (CI runs trawl there to get past
+ * Cloudflare); `APKMIRROR_PROXY_CA` is the proxy's root certificate. Unset, curl connects directly.
+ */
+const apkMirrorWeb = Layer.unwrap(
+  Effect.gen(function* () {
+    const url = yield* Config.option(Config.String("APKMIRROR_PROXY_URL"));
+    const caCertificate = yield* Config.option(Config.String("APKMIRROR_PROXY_CA"));
+
+    const proxy = Option.map(url, (value) => ({
+      url: value,
+      caCertificate: Option.getOrUndefined(caCertificate),
+    }));
+
+    return CurlWeb.layer({ ...APKMIRROR_WEB_OPTIONS, proxy: Option.getOrUndefined(proxy) }).pipe(
+      Layer.provide(Shell.layer),
+    );
+  }).pipe(Effect.orDie),
+);
 
 export const runtimeLayer = Layer.mergeAll(GitHub.layer, Web.layer, Shell.layer, apkMirrorWeb).pipe(
   Layer.provideMerge(BunServices.layer),
