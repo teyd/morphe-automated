@@ -19,6 +19,7 @@ describe("fetchVerified", () => {
       const result = yield* fetchVerified("https://x/a.jar", "/tmp/a.jar", "ABC123").pipe(
         Effect.provide(webReturning("abc123")),
       );
+
       assert.strictEqual(result.size, 3);
     }),
   );
@@ -30,6 +31,7 @@ describe("fetchVerified", () => {
           Effect.provide(webReturning("deadbeef")),
         ),
       );
+
       assert.strictEqual(error._tag, "VerificationError");
     }),
   );

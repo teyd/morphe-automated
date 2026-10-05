@@ -16,6 +16,7 @@ export const obtainium = Command.make(
   Effect.fn("obtainium")(function* ({ config, repo }) {
     const loaded = yield* loadConfig(config);
     const slug = Option.getOrUndefined(repo) ?? (yield* repository);
+
     if (slug === undefined) {
       return yield* Effect.fail(new Error("pass --repo owner/name or set GITHUB_REPOSITORY"));
     }
@@ -30,8 +31,10 @@ export const obtainium = Command.make(
           arch: app.config.arch,
           repo: slug,
         });
+
         return `| ${app.config.name} | [Add to Obtainium](${link}) |`;
       });
+
     yield* Console.log(["| App | Obtainium |", "| --- | --- |", ...rows].join("\n"));
   }),
 ).pipe(Command.withDescription("Print a README table with one-tap Obtainium import links"));

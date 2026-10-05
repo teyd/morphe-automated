@@ -7,6 +7,7 @@ import { GitHub } from "../src/services/GitHub.ts";
 import { packageTargets, resolveBundle } from "../src/services/patch-sources.ts";
 
 const HOUR = 3_600_000;
+
 const now = Date.parse("2026-10-05T04:17:00Z");
 
 const release = (
@@ -39,6 +40,7 @@ const fakeGitHub = (releases: ReadonlyArray<Release>, files: Record<string, stri
       releases: () => Effect.succeed(releases),
       rawFile: (repo, ref, path) => {
         const body = files[`${repo}@${ref}:${path}`];
+
         return body === undefined
           ? Effect.die(new Error(`unexpected fetch ${repo}@${ref}:${path}`))
           : Effect.succeed(body);
@@ -61,9 +63,11 @@ describe("resolveBundle", () => {
         release("v3.50.0", "2026-10-04T05:24:00Z"),
         release("v3.49.0", "2026-10-03T05:19:00Z"),
       ];
+
       const bundle = yield* resolveBundle("x", source(), now).pipe(
         Effect.provide(fakeGitHub(releases, {})),
       );
+
       assert.strictEqual(bundle.tag, "v3.50.0");
       assert.strictEqual(bundle.sha256, "ab".repeat(32));
       assert.strictEqual(bundle.successorTag, "v3.51.0");
@@ -77,6 +81,7 @@ describe("resolveBundle", () => {
           Effect.provide(fakeGitHub([release("v1.0.0", "2026-09-01T00:00:00Z", null)], {})),
         ),
       );
+
       assert.strictEqual(error._tag, "GitHubError");
     }),
   );
@@ -88,6 +93,7 @@ describe("resolveBundle", () => {
           Effect.provide(fakeGitHub([release("v1.0.0", "2026-10-05T03:00:00Z")], {})),
         ),
       );
+
       assert.strictEqual(error._tag, "NoEligibleRelease");
     }),
   );
@@ -126,19 +132,25 @@ describe("packageTargets", () => {
           },
         ],
       });
+
       const info = yield* packageTargets(bundle, source(), "com.example").pipe(
         Effect.provide(fakeGitHub([], { "o/r@v1.45.0:patches-list.json": list })),
       );
+
       assert.deepStrictEqual(info?.signatures, ["aa"]);
+
       const chosen = yield* chooseAppVersion(info, "com.example", {
         pin: undefined,
         allowExperimental: false,
       });
+
       assert.strictEqual(chosen, "1.5.0");
+
       const experimental = yield* chooseAppVersion(info, "com.example", {
         pin: undefined,
         allowExperimental: true,
       });
+
       assert.strictEqual(experimental, "2.0.0");
     }),
   );
@@ -159,6 +171,7 @@ describe("packageTargets", () => {
           }),
         ),
       );
+
       assert.deepStrictEqual(info?.versions, [{ version: "12.29.1-prod.01", experimental: false }]);
     }),
   );
@@ -181,6 +194,7 @@ describe("packageTargets", () => {
           ),
         ),
       );
+
       assert.strictEqual(error._tag, "GitHubError");
     }),
   );
@@ -193,6 +207,7 @@ describe("chooseAppVersion", () => {
         pin: "9.9.9",
         allowExperimental: false,
       });
+
       assert.strictEqual(chosen, "9.9.9");
     }),
   );
@@ -202,6 +217,7 @@ describe("chooseAppVersion", () => {
       const error = yield* Effect.flip(
         chooseAppVersion(undefined, "com.example", { pin: undefined, allowExperimental: false }),
       );
+
       assert.strictEqual(error._tag, "NoCompatibleVersion");
     }),
   );

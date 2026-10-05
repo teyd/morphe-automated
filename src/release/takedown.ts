@@ -35,6 +35,7 @@ export const takedownApp = Effect.fn("takedownApp")(function* (
 
   const releases = releasesOf(yield* github.releases(repo), slug);
   const deleted: string[] = [];
+
   for (const release of releases) {
     yield* shell
       .run("gh", ["release", "delete", release.tag_name, "--repo", repo, "--yes", "--cleanup-tag"])
@@ -43,5 +44,6 @@ export const takedownApp = Effect.fn("takedownApp")(function* (
   }
 
   yield* fs.writeFileString(configFile, disableAppToml(text)).pipe(Effect.mapError(wrap));
+
   return { deleted, configFile } satisfies TakedownResult;
 });

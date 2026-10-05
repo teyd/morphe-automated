@@ -24,6 +24,7 @@ export const verifyStockApk = Effect.fn("verifyStockApk")(function* (
   expected: ReadonlyArray<string>,
 ) {
   const fs = yield* FileSystem.FileSystem;
+
   const bytes = yield* fs
     .readFile(apk.path)
     .pipe(Effect.mapError((error) => asVerificationError(error.message)));
@@ -34,6 +35,7 @@ export const verifyStockApk = Effect.fn("verifyStockApk")(function* (
   });
 
   const known = expected.map((fingerprint) => fingerprint.toLowerCase());
+
   if (known.length === 0) return { certSha256, verified: false } satisfies StockVerification;
 
   if (!known.includes(certSha256)) {
@@ -42,5 +44,6 @@ export const verifyStockApk = Effect.fn("verifyStockApk")(function* (
       message: `${apk.source} APK is signed by ${certSha256}, which is not one of the original publisher's certificates (${known.join(", ")})`,
     });
   }
+
   return { certSha256, verified: true } satisfies StockVerification;
 });

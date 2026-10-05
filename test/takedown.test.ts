@@ -38,6 +38,7 @@ describe("takedownApp", () => {
     Effect.gen(function* () {
       const commands: string[][] = [];
       const writes: Record<string, string> = {};
+
       const layer = Layer.mergeAll(
         Layer.succeed(
           GitHub,
@@ -57,6 +58,7 @@ describe("takedownApp", () => {
             run: (command, args) =>
               Effect.sync(() => {
                 commands.push([command, ...args]);
+
                 return { stdout: "", stderr: "" };
               }),
           }),

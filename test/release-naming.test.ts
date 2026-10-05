@@ -17,6 +17,7 @@ const inputs: FingerprintInputs = {
   configHash: "cfg",
   certSha256: "cert",
 };
+
 const identity = { slug: "youtube", name: "YouTube", inputs, fingerprint: "a1b2c3d4e5f6" };
 
 describe("release naming", () => {
@@ -33,6 +34,7 @@ describe("release naming", () => {
         bundles: [...inputs.bundles, { source: "piko", tag: "v3.9.0", sha256: "bb" }],
       },
     });
+
     expect(tag).toBe("youtube-21.16.256-morphe-1.45.0_piko-3.9.0-a1b2c3d");
   });
 

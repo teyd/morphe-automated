@@ -32,6 +32,7 @@ export const withSigningKey = <A, E, R>(
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
+
       const secrets = yield* SECRETS.pipe(
         Effect.mapError(
           () =>
@@ -43,6 +44,7 @@ export const withSigningKey = <A, E, R>(
       );
 
       const inMemory = yield* fs.exists("/dev/shm").pipe(Effect.orElseSucceed(() => false));
+
       const directory = yield* fs
         .makeTempDirectoryScoped({
           prefix: "morphe-automated-key-",
@@ -56,6 +58,7 @@ export const withSigningKey = <A, E, R>(
         .pipe(Effect.mapError((error) => new KeystoreError({ message: error.message })));
 
       const certSha256 = yield* keystoreCertSha256(file, secrets.alias, secrets.password);
+
       if (certSha256 !== expectedCertSha256.toLowerCase()) {
         return yield* new KeystoreError({
           message: `the keystore secret has certificate ${certSha256}, but config/signing.toml expects ${expectedCertSha256}`,

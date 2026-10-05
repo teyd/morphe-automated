@@ -23,9 +23,11 @@ export interface PatchJob {
  */
 export const patchArgs = (job: PatchJob): string[] => {
   const [first, ...rest] = job.bundles;
+
   if (first === undefined) throw new PatchError({ message: "no patch bundles to apply" });
 
   const password = Redacted.value(job.key.password);
+
   return [
     "-jar",
     job.cliJar,
@@ -70,6 +72,7 @@ export const runPatch = Effect.fn("morphe.patch")(function* (job: PatchJob) {
   );
 
   const exists = yield* fs.exists(job.output).pipe(Effect.orElseSucceed(() => false));
+
   if (!exists)
     return yield* new PatchError({ message: `the CLI finished but wrote no ${job.output}` });
 });

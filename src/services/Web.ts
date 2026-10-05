@@ -110,6 +110,7 @@ export const makeWeb = Effect.fn("makeWeb")(function* (options: WebOptions = {})
       body(url, (r) => r.arrayBuffer, headers).pipe(
         Effect.flatMap((buffer) => {
           const bytes = new Uint8Array(buffer);
+
           return fs.writeFile(destination, bytes).pipe(
             Effect.mapError((error) => new WebError({ url, message: error.message })),
             Effect.as({
@@ -121,6 +122,7 @@ export const makeWeb = Effect.fn("makeWeb")(function* (options: WebOptions = {})
         }),
       ),
   };
+
   return web;
 });
 

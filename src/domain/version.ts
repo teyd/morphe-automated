@@ -9,10 +9,13 @@ export const compareVersions = (a: string, b: string): number => {
   const left = numericParts(a);
   const right = numericParts(b);
   const length = Math.max(left.length, right.length);
+
   for (let i = 0; i < length; i++) {
     const diff = (left[i] ?? 0) - (right[i] ?? 0);
+
     if (diff !== 0) return diff;
   }
+
   return 0;
 };
 

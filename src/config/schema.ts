@@ -20,6 +20,7 @@ export const SourceConfig = Schema.Struct({
   /** Path to an ASCII-armored public key. When set, the bundle's `.asc` signature must verify. */
   gpg_public_key: Schema.optionalKey(Schema.String),
 });
+
 export type SourceConfig = typeof SourceConfig.Type;
 
 export const SourcesFile = Schema.Struct({
@@ -57,10 +58,12 @@ export const AppConfig = Schema.Struct({
     uptodown: Schema.optionalKey(Schema.String),
   }),
 });
+
 export type AppConfig = typeof AppConfig.Type;
 
 /** Public SHA-256 fingerprint of your signing certificate. Safe to commit; written by `keystore init`. */
 export const SigningFile = Schema.Struct({
   cert_sha256: Schema.String.pipe(Schema.check(Schema.isPattern(/^[0-9a-f]{64}$/))),
 });
+
 export type SigningFile = typeof SigningFile.Type;

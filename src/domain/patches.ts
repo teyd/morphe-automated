@@ -6,6 +6,7 @@ export const PatchesBundle = Schema.Struct({
   /** piko-newx records the single target app version here. */
   app_version: Schema.optional(Schema.String),
 });
+
 export type PatchesBundle = typeof PatchesBundle.Type;
 
 export const PatchTarget = Schema.Struct({
@@ -32,6 +33,7 @@ export const PatchesList = Schema.Struct({
     }),
   ),
 });
+
 export type PatchesList = typeof PatchesList.Type;
 
 export interface PackageInfo {
@@ -54,17 +56,21 @@ export const packageInfo = (list: PatchesList, packageName: string): PackageInfo
       if (pkg.packageName !== packageName) continue;
       found = true;
       apkFileType ??= pkg.apkFileType ?? null;
+
       for (const sig of pkg.signatures ?? []) signatures.add(sig.toLowerCase());
+
       for (const target of pkg.targets ?? []) {
         // A version is experimental only if every patch that lists it says so.
         const experimental =
           (target.isExperimental ?? false) && (versions.get(target.version) ?? true);
+
         versions.set(target.version, experimental);
       }
     }
   }
 
   if (!found) return undefined;
+
   return {
     packageName,
     apkFileType,

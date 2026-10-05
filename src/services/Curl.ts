@@ -20,6 +20,7 @@ const headerArgs = (headers: Readonly<Record<string, string>>): string[] =>
 /** Split `curl --write-out '\n%{http_code}'` output into body and status. */
 export const splitStatus = (output: string): { readonly body: string; readonly status: number } => {
   const cut = output.lastIndexOf("\n");
+
   return { body: cut < 0 ? "" : output.slice(0, cut), status: Number(output.slice(cut + 1)) };
 };
 
@@ -68,6 +69,7 @@ export const makeCurlWeb = Effect.fn("makeCurlWeb")(function* (options: WebOptio
       run(url, ["--write-out", "\n%{http_code}"], headers).pipe(
         Effect.flatMap(({ stdout }) => {
           const { body, status } = splitStatus(stdout);
+
           return statusOk(url, status).pipe(Effect.as(body));
         }),
       ),
@@ -104,5 +106,6 @@ export const makeCurlWeb = Effect.fn("makeCurlWeb")(function* (options: WebOptio
       ),
     download,
   };
+
   return web;
 });

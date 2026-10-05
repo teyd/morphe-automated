@@ -45,12 +45,14 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
   yield* fetchVerified(plan.cli.assetUrl, cliJar, plan.cli.sha256);
 
   const bundles: string[] = [];
+
   for (const bundle of plan.bundles) {
     yield* Effect.logInfo(`[${app.slug}] downloading ${bundle.source} ${bundle.tag}`);
     const file = path.join(directory, `${bundle.source}-${bundle.assetName}`);
     yield* fetchVerified(bundle.assetUrl, file, bundle.sha256);
 
     const key = options.config.sources[bundle.source]?.gpg_public_key;
+
     if (key !== undefined) {
       if (bundle.signatureUrl === undefined) {
         return yield* new VerificationError({
@@ -58,11 +60,13 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
           message: `${bundle.source} ${bundle.tag} has no .asc signature but a gpg_public_key is configured`,
         });
       }
+
       const signature = `${file}.asc`;
       yield* (yield* Web).download(bundle.signatureUrl, signature);
       yield* gpgVerify(file, signature, path.join(options.configRoot, key));
       yield* Effect.logInfo(`[${app.slug}] ${bundle.source} signature verified`);
     }
+
     bundles.push(file);
   }
 
@@ -70,6 +74,7 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
   const mirror = yield* makeCurlWeb(APKMIRROR_WEB_OPTIONS);
   const uptodown = yield* makeWeb({ headers: { "user-agent": BROWSER_UA } });
   yield* Effect.logInfo(`[${app.slug}] fetching ${app.config.package} ${plan.inputs.appVersion}`);
+
   const stock = yield* fetchApk([apkMirrorSource(mirror), uptodownSource(uptodown)], {
     packageName: app.config.package,
     version: plan.inputs.appVersion,
@@ -78,11 +83,13 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
     download: app.config.download,
     destination: path.join(directory, "stock"),
   });
+
   yield* Effect.logInfo(
     `[${app.slug}] got ${stock.kind} from ${stock.source} (${stock.size} bytes)`,
   );
 
   const verification = yield* verifyStockApk(stock, plan.expectedSignatures);
+
   if (verification.verified) {
     yield* Effect.logInfo(`[${app.slug}] stock APK signed by ${verification.certSha256}: verified`);
   } else {
@@ -108,12 +115,14 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
   const bytes = yield* fs
     .readFile(output)
     .pipe(Effect.mapError((error) => new PatchError({ message: error.message })));
+
   yield* Effect.logInfo(`[${app.slug}] built ${output} (${bytes.byteLength} bytes)`);
 
   if (options.publish) {
     if (options.repo === undefined) {
       return yield* new PatchError({ message: "cannot publish: GITHUB_REPOSITORY is not set" });
     }
+
     const manifest: BuildManifest = {
       schema: 1,
       fingerprint: plan.fingerprint,
@@ -125,6 +134,7 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
         size: bytes.byteLength,
       },
     };
+
     yield* publishRelease({
       repo: options.repo,
       identity: {

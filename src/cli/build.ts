@@ -22,17 +22,20 @@ export const build = Command.make(
   Effect.fn("build")(function* ({ config, app, publish, workDir }) {
     const loaded = yield* loadConfig(config);
     const found = loaded.apps.find((candidate) => candidate.slug === app);
+
     if (found === undefined) {
       return yield* Effect.fail(
         new Error(`unknown app "${app}". Known: ${loaded.apps.map((a) => a.slug).join(", ")}`),
       );
     }
+
     if (!found.config.enabled) {
       return yield* Effect.fail(new Error(`${app} is disabled in config/apps/${app}.toml`));
     }
 
     const repo = yield* repository;
     const plan = yield* planApp(found, loaded, { now: Date.now(), repo, force: true });
+
     const output = yield* buildApp(plan, {
       config: loaded,
       configRoot: config,
@@ -40,6 +43,7 @@ export const build = Command.make(
       publish,
       repo,
     });
+
     yield* Console.log(`\nBuilt ${output}`);
   }),
 ).pipe(

@@ -45,6 +45,7 @@ const inputs: FingerprintInputs = {
   configHash: "cfg",
   certSha256: "cert",
 };
+
 const manifest: BuildManifest = {
   schema: 1,
   fingerprint: "a1b2c3d4e5f6",
@@ -87,6 +88,7 @@ describe("previousBuild", () => {
       GitHub,
       GitHub.of({ releases: () => Effect.succeed(list), rawFile: () => Effect.die("unused") }),
     );
+
   const web = (json: unknown) =>
     Layer.succeed(
       Web,
@@ -102,6 +104,7 @@ describe("previousBuild", () => {
       const result = yield* previousBuild("o/r", "youtube").pipe(
         Effect.provide(Layer.mergeAll(github(releases), web(manifest))),
       );
+
       assert.strictEqual(result?.fingerprint, "a1b2c3d4e5f6");
     }),
   );
@@ -136,6 +139,7 @@ describe("publishing", () => {
       manifest: "/work/m.json",
       notes: "/work/n.md",
     });
+
     assert.deepStrictEqual(args, [
       "release",
       "create",
@@ -163,12 +167,14 @@ describe("publishing", () => {
     Effect.gen(function* () {
       const commands: string[][] = [];
       const written: string[] = [];
+
       const layer = Layer.mergeAll(
         Layer.succeed(
           Shell,
           Shell.of({
             run: (command, args) => {
               commands.push([command, ...args]);
+
               return Effect.succeed({ stdout: "", stderr: "" });
             },
           }),
@@ -186,6 +192,7 @@ describe("publishing", () => {
           writeFileString: (path) => Effect.sync(() => void written.push(path)),
         }),
       );
+
       yield* publishRelease(job).pipe(Effect.provide(layer));
 
       assert.strictEqual(commands[0]?.slice(0, 3).join(" "), "gh release create");

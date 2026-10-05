@@ -39,15 +39,18 @@ export const check = Command.make(
     const loaded = yield* loadConfig(config);
     const repo = yield* repository;
     const wanted = Option.getOrUndefined(app);
+
     const apps = loaded.apps.filter(
       (candidate) =>
         candidate.config.enabled && (wanted === undefined || candidate.slug === wanted),
     );
+
     if (wanted !== undefined && apps.length === 0) {
       return yield* Effect.fail(new Error(`no enabled app named "${wanted}"`));
     }
 
     const now = Date.now();
+
     const report: {
       build: CheckReport["build"][number][];
       errors: CheckReport["errors"][number][];
@@ -58,14 +61,18 @@ export const check = Command.make(
 
     for (const candidate of apps) {
       const result = yield* Effect.result(planApp(candidate, loaded, { now, repo, force }));
+
       if (result._tag === "Failure") {
         const message =
           result.failure instanceof Error ? result.failure.message : String(result.failure);
+
         report.errors.push({ slug: candidate.slug, message });
         yield* annotate("error", candidate.slug, message);
         continue;
       }
+
       yield* Console.log(describe(result.success));
+
       if (result.success.decision.build) {
         report.build.push({
           slug: candidate.slug,

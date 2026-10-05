@@ -34,6 +34,7 @@ export class GitHub extends Context.Service<GitHub, GitHubClient>()("morphe-auto
         const json = yield* web
           .json(`https://api.github.com/repos/${repo}/releases?per_page=50`, apiHeaders)
           .pipe(Effect.mapError(fromWeb));
+
         return yield* Schema.decodeUnknownEffect(Releases)(json).pipe(
           Effect.mapError((error) => new GitHubError({ message: `${repo}: ${error.message}` })),
         );

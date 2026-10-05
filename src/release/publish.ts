@@ -33,9 +33,11 @@ export interface PublishJob {
 
 export const releaseNotes = (job: PublishJob): string => {
   const { identity, manifest } = job;
+
   const patches = job.bundles
     .map((b) => `[${b.source} ${b.tag}](https://github.com/${b.repo}/releases/tag/${b.tag})`)
     .join(", ");
+
   return [
     `**${identity.name} ${identity.inputs.appVersion}**, patched for ${identity.inputs.arch}.`,
     "",
@@ -78,6 +80,7 @@ export const publishRelease = Effect.fn("publishRelease")(function* (job: Publis
     manifest: path.join(job.workDirectory, MANIFEST_ASSET),
     notes: path.join(job.workDirectory, "release-notes.md"),
   };
+
   const wrap = (error: { readonly message: string }) => new GitHubError({ message: error.message });
 
   yield* fs.copyFile(job.apkPath, files.apk).pipe(Effect.mapError(wrap));
@@ -89,6 +92,7 @@ export const publishRelease = Effect.fn("publishRelease")(function* (job: Publis
   yield* shell.run("gh", createArgs(job, files), { echo: true }).pipe(Effect.mapError(wrap));
 
   const releases = yield* github.releases(job.repo);
+
   for (const old of releasesToPrune(releases, job.identity.slug, KEEP_PER_APP)) {
     yield* Effect.logInfo(`pruning ${old.tag_name}`);
     yield* shell

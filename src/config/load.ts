@@ -65,6 +65,7 @@ export const configHash = (app: AppConfig): string =>
 export const loadConfig = Effect.fn("loadConfig")(function* (root: string) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
+
   const read = (file: string) =>
     fs
       .readFileString(path.join(root, file))
@@ -75,6 +76,7 @@ export const loadConfig = Effect.fn("loadConfig")(function* (root: string) {
       );
 
   const sources = yield* read("sources.toml").pipe(Effect.flatMap(parseSources));
+
   const certSha256 = yield* fs.exists(path.join(root, "signing.toml")).pipe(
     Effect.mapError((error) => new ConfigError({ message: error.message })),
     Effect.flatMap((exists) =>
@@ -98,14 +100,17 @@ export const loadConfig = Effect.fn("loadConfig")(function* (root: string) {
     );
 
   const apps: LoadedApp[] = [];
+
   for (const file of files.filter((f) => f.endsWith(".toml")).sort()) {
     const slug = file.replace(/\.toml$/, "");
     const app = yield* read(`apps/${file}`).pipe(Effect.flatMap((text) => parseApp(slug, text)));
+
     for (const source of app.config.sources) {
       if (!(source in sources)) {
         return yield* new ConfigError({ message: `apps/${file}: unknown source "${source}"` });
       }
     }
+
     apps.push(app);
   }
 

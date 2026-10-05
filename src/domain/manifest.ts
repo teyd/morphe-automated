@@ -18,6 +18,7 @@ export const FingerprintInputs = Schema.Struct({
   /** SHA-256 of the signing certificate, so rotating the keystore forces a rebuild. */
   certSha256: Schema.String,
 });
+
 export type FingerprintInputs = typeof FingerprintInputs.Type;
 
 /** Attached to every release as `build-manifest.json`; the previous release is our only state. */
@@ -32,4 +33,5 @@ export const BuildManifest = Schema.Struct({
     size: Schema.Number,
   }),
 });
+
 export type BuildManifest = typeof BuildManifest.Type;

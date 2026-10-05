@@ -31,6 +31,7 @@ describe("fetchApk", () => {
         [source("a", "blocked"), source("b", "missing"), source("c", "ok")],
         request,
       );
+
       assert.strictEqual(result.source, "c");
     }),
   );
@@ -47,6 +48,7 @@ describe("fetchApk", () => {
       const error = yield* Effect.flip(
         fetchApk([source("a", "blocked"), source("b", "missing")], request),
       );
+
       assert.strictEqual(error._tag, "ApkNotFound");
       assert.include(error.message, "a: cloudflare");
       assert.include(error.message, "b: no such version");

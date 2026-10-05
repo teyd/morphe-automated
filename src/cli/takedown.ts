@@ -15,9 +15,11 @@ export const takedown = Command.make(
   },
   Effect.fn("takedown")(function* ({ config, app, repo }) {
     const slug = Option.getOrUndefined(repo) ?? (yield* repository);
+
     if (slug === undefined) {
       return yield* Effect.fail(new Error("pass --repo owner/name or set GITHUB_REPOSITORY"));
     }
+
     const result = yield* takedownApp(slug, app, config);
     yield* Console.log(
       `Deleted ${result.deleted.length} release(s) of ${app}${result.deleted.map((tag) => `\n  - ${tag}`).join("")}`,

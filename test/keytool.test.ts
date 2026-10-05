@@ -3,8 +3,10 @@ import { describe, expect, it } from "vite-plus/test";
 import { certificateSha256, pemToDer } from "../src/signing/keytool.ts";
 
 const der = Uint8Array.from({ length: 200 }, (_, i) => (i * 13) % 256);
+
 const pem = (body: string) =>
   `Certificate stored in file\n-----BEGIN CERTIFICATE-----\n${body}\n-----END CERTIFICATE-----\n`;
+
 const wrapped = Buffer.from(der)
   .toString("base64")
   .replace(/(.{64})/g, "$1\n");

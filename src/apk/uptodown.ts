@@ -20,7 +20,9 @@ export const parseVersions = (html: string): ReadonlyArray<UptodownVersion> =>
       const id = row.getAttribute("data-version-id");
       const version = row.querySelector(".version")?.text.trim();
       const type = row.querySelector(".type")?.text.trim().toLowerCase();
+
       if (id === undefined || !version) return [];
+
       return [{ id, version, kind: type === "apk" ? ("apk" as const) : ("bundle" as const) }];
     });
 
@@ -37,12 +39,16 @@ export type DownloadPage =
 export const parseDownloadPage = (html: string): DownloadPage => {
   const root = parse(html);
   const token = root.querySelector("#detail-download-button")?.getAttribute("data-url");
+
   if (token) return { _tag: "Direct", path: token };
+
   if (root.querySelector("#download-turnstile-widget") !== null) return { _tag: "Captcha" };
+
   return { _tag: "Missing" };
 };
 
 const blocked = (message: string) => new SourceBlocked({ source: NAME, message });
+
 const notFound = (message: string) => new ApkNotFound({ source: NAME, message });
 
 const fromWeb = (error: WebError) =>
@@ -53,15 +59,18 @@ const fromWeb = (error: WebError) =>
 export const uptodownSource = (web: WebClient): ApkSource => {
   const fetch = Effect.fn("uptodown.fetch")(function* (request: ApkRequest) {
     const slug = request.download.uptodown;
+
     if (slug === undefined) return yield* notFound("no uptodown slug configured for this app");
     const base = `https://${slug}.en.uptodown.com/android`;
 
     const versions = parseVersions(
       yield* web.text(`${base}/versions`).pipe(Effect.mapError(fromWeb)),
     );
+
     const matches = versions.filter((v) => v.version === request.version);
     const wanted = request.apkFileType === "APK_REQUIRED" ? "apk" : undefined;
     const chosen = matches.find((v) => v.kind === wanted) ?? (wanted ? undefined : matches[0]);
+
     if (chosen === undefined) {
       return yield* notFound(`${request.version} not in the latest versions list`);
     }
@@ -69,15 +78,19 @@ export const uptodownSource = (web: WebClient): ApkSource => {
     const page = parseDownloadPage(
       yield* web.text(`${base}/download/${chosen.id}`).pipe(Effect.mapError(fromWeb)),
     );
+
     if (page._tag === "Captcha") {
       return yield* blocked("download requires an interactive captcha (Cloudflare Turnstile)");
     }
+
     if (page._tag === "Missing") return yield* notFound("download page has no download button");
 
     const destination = `${request.destination}.${chosen.kind === "apk" ? "apk" : "apkm"}`;
+
     const downloaded = yield* web
       .download(`https://dw.uptodown.com/dwn/${page.path}`, destination)
       .pipe(Effect.mapError(fromWeb));
+
     if (!looksLikeZip(downloaded.head))
       return yield* blocked("the download was not an APK archive");
 

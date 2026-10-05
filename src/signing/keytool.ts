@@ -8,7 +8,9 @@ const PASSWORD_ENV = "MORPHE_AUTOMATED_KEYSTORE_PASSWORD";
 /** DER bytes of the first PEM certificate in `pem`. */
 export const pemToDer = (pem: string): Uint8Array => {
   const body = /-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----/.exec(pem)?.[1];
+
   if (body === undefined) throw new KeystoreError({ message: "keytool printed no certificate" });
+
   return new Uint8Array(Buffer.from(body.replace(/\s+/g, ""), "base64"));
 };
 
@@ -62,6 +64,7 @@ export const keystoreCertSha256 = Effect.fn("keytool.certSha256")(function* (
   password: Redacted.Redacted<string>,
 ) {
   const shell = yield* Shell;
+
   const { stdout } = yield* shell
     .run(
       "keytool",
@@ -73,6 +76,7 @@ export const keystoreCertSha256 = Effect.fn("keytool.certSha256")(function* (
         (error) => new KeystoreError({ message: `cannot read the keystore: ${error.message}` }),
       ),
     );
+
   return yield* Effect.try({
     try: () => certificateSha256(stdout),
     catch: (cause) =>

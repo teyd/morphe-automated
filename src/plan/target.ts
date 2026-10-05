@@ -15,6 +15,7 @@ export const chooseAppVersion = (
   options: TargetOptions,
 ) => {
   if (options.pin !== undefined) return Effect.succeed(options.pin);
+
   if (info === undefined) {
     return Effect.fail(
       new NoCompatibleVersion({
@@ -23,8 +24,10 @@ export const chooseAppVersion = (
       }),
     );
   }
+
   const candidates = info.versions.filter((v) => options.allowExperimental || !v.experimental);
   const best = newest(candidates, (v) => v.version);
+
   if (best === undefined) {
     return Effect.fail(
       new NoCompatibleVersion({
@@ -33,5 +36,6 @@ export const chooseAppVersion = (
       }),
     );
   }
+
   return Effect.succeed(best.version);
 };

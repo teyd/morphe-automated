@@ -5,11 +5,14 @@ import { VerificationError } from "../domain/errors.ts";
 const fail = (message: string) => new VerificationError({ kind: "certificate", message });
 
 const SIG_BLOCK_MAGIC = "APK Sig Block 42";
+
 /** Signature scheme v2, v3 and v3.1 block ids. */
 const SIGNATURE_SCHEMES = [0x7109871a, 0xf05368c0, 0x1b93ad61];
 
 const u16 = (view: DataView, offset: number) => view.getUint16(offset, true);
+
 const u32 = (view: DataView, offset: number) => view.getUint32(offset, true);
+
 /** 64-bit little endian; real APKs are far below 2^53 so a Number is exact. */
 const u64 = (view: DataView, offset: number) => Number(view.getBigUint64(offset, true));
 
@@ -23,6 +26,7 @@ interface Zip {
 
 const readEndOfCentralDirectory = (view: DataView): Zip => {
   const earliest = Math.max(0, view.byteLength - 22 - 0xffff);
+
   for (let offset = view.byteLength - 22; offset >= earliest; offset--) {
     if (u32(view, offset) === 0x06054b50) {
       return {
@@ -31,6 +35,7 @@ const readEndOfCentralDirectory = (view: DataView): Zip => {
       };
     }
   }
+
   throw fail("not a ZIP archive (no end of central directory)");
 };
 
@@ -45,7 +50,9 @@ const firstCertificate = (bytes: Uint8Array, value: { start: number; end: number
   cursor += 4; // certificates length
   const length = u32(view, cursor);
   cursor += 4;
+
   if (cursor + length > value.end) throw fail("truncated certificate in signature block");
+
   return bytes.subarray(cursor, cursor + length);
 };
 
@@ -55,18 +62,22 @@ export const signingCertSha256 = (apk: Uint8Array): string => {
   const { centralDirectoryOffset } = readEndOfCentralDirectory(view);
 
   const magicAt = centralDirectoryOffset - 16;
+
   if (
     magicAt < 8 ||
     new TextDecoder().decode(apk.subarray(magicAt, magicAt + 16)) !== SIG_BLOCK_MAGIC
   ) {
     throw fail("no APK signing block (v1-only or unsigned APK)");
   }
+
   const blockSize = u64(view, magicAt - 8);
   const blockStart = centralDirectoryOffset - blockSize - 8;
+
   if (blockStart < 0) throw fail("corrupt APK signing block");
 
   const found = new Map<number, { start: number; end: number }>();
   let offset = blockStart + 8;
+
   while (offset < magicAt - 8) {
     const pairLength = u64(view, offset);
     const id = u32(view, offset + 8);
@@ -75,9 +86,11 @@ export const signingCertSha256 = (apk: Uint8Array): string => {
   }
 
   const scheme = SIGNATURE_SCHEMES.map((id) => found.get(id)).find((value) => value !== undefined);
+
   if (scheme === undefined) throw fail("signing block has no v2/v3 signature");
 
   const certificate = firstCertificate(apk, scheme);
+
   return createHash("sha256").update(certificate).digest("hex");
 };
 
@@ -89,6 +102,7 @@ export const extractBaseApk = (bundle: Uint8Array): Uint8Array => {
 
   let cursor = zip.centralDirectoryOffset;
   const end = zip.centralDirectoryOffset + zip.centralDirectorySize;
+
   while (cursor + 46 <= end && u32(view, cursor) === 0x02014b50) {
     const method = u16(view, cursor + 10);
     const compressedSize = u32(view, cursor + 20);
@@ -101,12 +115,17 @@ export const extractBaseApk = (bundle: Uint8Array): Uint8Array => {
     if (name === "base.apk") {
       const dataStart =
         localOffset + 30 + u16(view, localOffset + 26) + u16(view, localOffset + 28);
+
       const data = bundle.subarray(dataStart, dataStart + compressedSize);
+
       if (method === 0) return data;
+
       if (method === 8) return new Uint8Array(inflateRawSync(data));
       throw fail(`base.apk uses unsupported ZIP method ${method}`);
     }
+
     cursor += 46 + nameLength + extraLength + commentLength;
   }
+
   throw fail("bundle has no base.apk");
 };

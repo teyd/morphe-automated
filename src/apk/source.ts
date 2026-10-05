@@ -33,12 +33,15 @@ export const fetchApk = Effect.fn("fetchApk")(function* (
   request: ApkRequest,
 ) {
   const failures: string[] = [];
+
   for (const source of sources) {
     const result = yield* Effect.result(source.fetch(request));
+
     if (result._tag === "Success") return result.success;
     yield* Effect.logWarning(`${source.name}: ${result.failure.message}`);
     failures.push(`${source.name}: ${result.failure.message}`);
   }
+
   return yield* new ApkNotFound({
     source: "all",
     message: `${request.packageName} ${request.version} unavailable (${failures.join("; ") || "no sources configured"})`,

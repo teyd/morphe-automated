@@ -15,14 +15,18 @@ describe("shipped config", () => {
 
   it("parses every app and references only known sources", async () => {
     const sources = await Effect.runPromise(parseSources(read("sources.toml")));
+
     const files = readdirSync(new URL("../config/apps/", import.meta.url)).filter((f) =>
       f.endsWith(".toml"),
     );
+
     expect(files.length).toBeGreaterThanOrEqual(5);
+
     for (const file of files) {
       const app = await Effect.runPromise(
         parseApp(file.replace(".toml", ""), read(`apps/${file}`)),
       );
+
       for (const source of app.config.sources) expect(sources).toHaveProperty(source);
     }
   });
@@ -57,6 +61,7 @@ describe("app defaults", () => {
     const result = await Effect.runPromise(
       Effect.flip(parseApp("bad", 'name = "Bad"\npackage = "x"\nsources = []\n[download]\n')),
     );
+
     expect(result._tag).toBe("ConfigError");
   });
 
@@ -69,15 +74,18 @@ describe("app defaults", () => {
 describe("configHash", () => {
   it("changes with patch selection but not with cosmetic fields", async () => {
     const base = await Effect.runPromise(parseApp("youtube", read("apps/youtube.toml")));
+
     const renamed = await Effect.runPromise(
       parseApp("youtube", read("apps/youtube.toml").replace('name = "YouTube"', 'name = "YT"')),
     );
+
     const patched = await Effect.runPromise(
       parseApp(
         "youtube",
         read("apps/youtube.toml").replace("[download]", '[patches]\ndisable = ["x"]\n[download]'),
       ),
     );
+
     expect(configHash(renamed.config)).toBe(configHash(base.config));
     expect(configHash(patched.config)).not.toBe(configHash(base.config));
   });

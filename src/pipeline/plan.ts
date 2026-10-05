@@ -26,6 +26,7 @@ export const planApp = Effect.fn("planApp")(function* (
   const bundles = yield* Effect.forEach(app.config.sources, (name) =>
     resolveBundle(name, config.sources[name]!, context.now),
   );
+
   const targets = yield* Effect.forEach(bundles, (bundle) =>
     packageTargets(bundle, config.sources[bundle.source]!, packageName),
   );
@@ -34,6 +35,7 @@ export const planApp = Effect.fn("planApp")(function* (
     pin: app.config.version,
     allowExperimental: app.config.allow_experimental,
   });
+
   const cli = yield* resolveCli(context.now);
 
   const inputs: FingerprintInputs = {
@@ -50,6 +52,7 @@ export const planApp = Effect.fn("planApp")(function* (
   const decision: Decision = decide(previous?.inputs, inputs, context.force);
 
   const known = targets.filter((t) => t !== undefined);
+
   return {
     app,
     inputs,

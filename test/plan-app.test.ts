@@ -10,6 +10,7 @@ import { Web } from "../src/services/Web.ts";
 import { planApp } from "../src/pipeline/plan.ts";
 
 const NOW = Date.parse("2026-10-05T04:17:00Z");
+
 const digest = (hex: string) => `sha256:${hex.repeat(32)}`;
 
 const release = (tag: string, publishedAt: string, assetName: string, hex: string): Release => ({
@@ -75,6 +76,7 @@ const world = (previous: BuildManifest | undefined, patchesTag = "v1.45.0") => {
         ),
       ]
     : [];
+
   return Layer.mergeAll(
     Layer.succeed(
       GitHub,
@@ -122,11 +124,13 @@ describe("planApp", () => {
   it.effect("builds when there is no previous release", () =>
     Effect.gen(function* () {
       const app = yield* youtube;
+
       const plan = yield* planApp(app, config, {
         now: NOW,
         repo: "alice/forge",
         force: false,
       }).pipe(Effect.provide(world(undefined)));
+
       assert.deepStrictEqual(plan.decision, { build: true, reason: "no previous build" });
       assert.strictEqual(plan.inputs.appVersion, "21.16.256");
       assert.strictEqual(plan.inputs.cli, "1.18");
@@ -139,11 +143,13 @@ describe("planApp", () => {
   it.effect("skips when the previous build used identical inputs", () =>
     Effect.gen(function* () {
       const app = yield* youtube;
+
       const first = yield* planApp(app, config, {
         now: NOW,
         repo: "alice/forge",
         force: false,
       }).pipe(Effect.provide(world(undefined)));
+
       const manifest: BuildManifest = {
         schema: 1,
         fingerprint: first.fingerprint,
@@ -151,11 +157,13 @@ describe("planApp", () => {
         builtAt: "2026-10-03T00:00:00Z",
         apk: { name: "youtube-arm64-v8a.apk", sha256: "ff", size: 1 },
       };
+
       const again = yield* planApp(app, config, {
         now: NOW,
         repo: "alice/forge",
         force: false,
       }).pipe(Effect.provide(world(manifest)));
+
       assert.deepStrictEqual(again.decision, { build: false, reason: "up to date" });
 
       const forced = yield* planApp(app, config, {
@@ -163,6 +171,7 @@ describe("planApp", () => {
         repo: "alice/forge",
         force: true,
       }).pipe(Effect.provide(world(manifest)));
+
       assert.strictEqual(forced.decision.build, true);
     }),
   );
@@ -170,11 +179,13 @@ describe("planApp", () => {
   it.effect("rebuilds, and says why, when the patches changed", () =>
     Effect.gen(function* () {
       const app = yield* youtube;
+
       const first = yield* planApp(app, config, {
         now: NOW,
         repo: "alice/forge",
         force: false,
       }).pipe(Effect.provide(world(undefined)));
+
       const manifest: BuildManifest = {
         schema: 1,
         fingerprint: first.fingerprint,
@@ -182,11 +193,13 @@ describe("planApp", () => {
         builtAt: "2026-10-03T00:00:00Z",
         apk: { name: "youtube-arm64-v8a.apk", sha256: "ff", size: 1 },
       };
+
       const next = yield* planApp(app, config, {
         now: NOW,
         repo: "alice/forge",
         force: false,
       }).pipe(Effect.provide(world(manifest, "v1.46.0")));
+
       assert.strictEqual(next.decision.build, true);
       assert.strictEqual(next.decision.reason, "patches morphe v1.45.0 -> v1.46.0");
     }),

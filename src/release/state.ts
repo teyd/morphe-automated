@@ -34,14 +34,18 @@ export const previousBuild = Effect.fn("previousBuild")(function* (
   const web = yield* Web;
 
   const releases = yield* github.releases(repo);
+
   const asset = releasesOf(releases, slug)
     .flatMap((release) => release.assets)
     .find((candidate) => candidate.name === MANIFEST_ASSET);
+
   if (asset === undefined) return undefined;
 
   const json = yield* web.json(asset.browser_download_url).pipe(Effect.option);
+
   if (json._tag === "None") return undefined;
   const manifest = yield* Schema.decodeUnknownEffect(BuildManifest)(json.value).pipe(Effect.option);
+
   return manifest._tag === "Some" ? manifest.value : undefined;
 });
 

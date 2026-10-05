@@ -26,6 +26,7 @@ export const initKeystore = Effect.fn("keystore.init")(function* (options: InitO
     Effect.map((found) => found.flat()),
     Effect.mapError((e) => fail(e.message)),
   );
+
   if (taken.length > 0) {
     return yield* fail(
       `refusing to overwrite ${taken.join(", ")}. Replacing your key invalidates every app you have installed.`,

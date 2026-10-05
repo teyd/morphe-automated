@@ -23,11 +23,13 @@ export const gpgVerify = Effect.fn("gpgVerify")(function* (
       const env = { GNUPGHOME: home };
       yield* fs.chmod(home, 0o700);
       yield* shell.run("gpg", ["--batch", "--import", publicKey], { env });
+
       const result = yield* shell.run(
         "gpg",
         ["--batch", "--status-fd", "1", "--verify", signature, file],
         { env },
       );
+
       if (!/^\[GNUPG:\] VALIDSIG /m.test(result.stdout)) {
         return yield* fail(`${path.basename(file)}: no valid signature from the configured key`);
       }

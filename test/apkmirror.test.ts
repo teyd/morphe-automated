@@ -10,9 +10,13 @@ const fixture = (name: string) =>
   readFileSync(new URL(`./fixtures/apkmirror/${name}`, import.meta.url), "utf8");
 
 const BASE = "https://www.apkmirror.com";
+
 const RELEASE = "/apk/google-inc/youtube/youtube-21-16-256-release/";
+
 const VARIANT = `${RELEASE}youtube-21-16-256-3-android-apk-download/`;
+
 const BUTTON = `${VARIANT}download/?key=6cd9e7c91b146a4e052075d88c75ee84ca752924&forcebaseapk=true`;
+
 const FILE =
   "/wp-content/themes/APKMirror/download.php?id=13517428&key=69957b1cd3a8561fa32b79cdc596bf459f4137b3&forcebaseapk=true";
 
@@ -28,11 +32,13 @@ const fakeWeb = (
   head: Uint8Array = new Uint8Array([0x50, 0x4b, 0x03, 0x04]),
 ) => {
   const requested: string[] = [];
+
   const web: WebClient = {
     text: (url) => {
       const path = url.replace(BASE, "");
       requested.push(path);
       const body = overrides[path] ?? pages[path];
+
       return body === undefined
         ? Effect.fail(new WebError({ url, status: 404, message: "HTTP 404" }))
         : Effect.succeed(body);
@@ -40,9 +46,11 @@ const fakeWeb = (
     json: () => Effect.die("unused"),
     download: (url) => {
       requested.push(url.replace(BASE, ""));
+
       return Effect.succeed({ sha256: "cafe", size: 1234, head });
     },
   };
+
   return { web, requested };
 };
 
@@ -84,12 +92,15 @@ describe("apkMirrorSource", () => {
   it.effect("tries the guessed release URL before paging through uploads", () =>
     Effect.gen(function* () {
       const guessed = "/apk/google-inc/youtube/youtube-21-17-0-release/";
+
       const { web, requested } = fakeWeb({
         [guessed]: fixture("release-youtube-21.16.256.html"),
       });
+
       const file = yield* apkMirrorSource(web)
         .fetch({ ...request, version: "21.17.0" })
         .pipe(Effect.catch(() => Effect.succeed(undefined)));
+
       assert.strictEqual(requested[0], "/apk/google-inc/youtube/");
       assert.strictEqual(requested[1], guessed);
       assert.isFalse(requested.some((r) => r.startsWith("/uploads/")));
@@ -100,12 +111,14 @@ describe("apkMirrorSource", () => {
   it.effect("pages through the upload history when the guess is a 404", () =>
     Effect.gen(function* () {
       const older = "/apk/google-inc/youtube/youtube-legacy-20-0-1-release/";
+
       const { web, requested } = fakeWeb({
         "/apk/google-inc/youtube/": `<a href="${RELEASE}">x</a><a href="/uploads/?appcategory=youtube">more</a>`,
         "/uploads/?appcategory=youtube": "<html>nothing here</html>",
         "/uploads/page/2/?appcategory=youtube": `<a href="${older}">20.0.1</a>`,
         [older]: fixture("release-youtube-21.16.256.html"),
       });
+
       yield* apkMirrorSource(web)
         .fetch({ ...request, version: "20.0.1" })
         .pipe(Effect.catch(() => Effect.succeed(undefined)));
@@ -124,9 +137,11 @@ describe("apkMirrorSource", () => {
       const { web } = fakeWeb({
         "/apk/google-inc/youtube/": `<a href="${RELEASE}">x</a>`,
       });
+
       const error = yield* Effect.flip(
         apkMirrorSource(web).fetch({ ...request, version: "9.9.9" }),
       );
+
       assert.strictEqual(error._tag, "ApkNotFound");
     }),
   );

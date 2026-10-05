@@ -55,6 +55,7 @@ describe("patchArgs", () => {
         options: { "App name": "My App", Opacity: 0.5, Hide: true },
       },
     });
+
     const start = args.indexOf("-p");
     expect(args.slice(start, start + 10)).toEqual([
       "-p",

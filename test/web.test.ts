@@ -6,17 +6,21 @@ import { makeWeb } from "../src/services/Web.ts";
 
 const scripted = (statuses: ReadonlyArray<number>, body = "ok") => {
   let calls = 0;
+
   const client = HttpClient.make((request) =>
     Effect.sync(() => {
       const status = statuses[Math.min(calls++, statuses.length - 1)] ?? 200;
+
       return HttpClientResponse.fromWeb(request, new Response(body, { status }));
     }),
   );
+
   const web = makeWeb().pipe(
     Effect.provide(
       Layer.mergeAll(Layer.succeed(HttpClient.HttpClient, client), FileSystem.layerNoop({})),
     ),
   );
+
   return { web, calls: () => calls };
 };
 

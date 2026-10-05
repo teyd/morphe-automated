@@ -3,6 +3,7 @@ import type { Release } from "../src/domain/github.ts";
 import { selectRelease } from "../src/plan/select-release.ts";
 
 const HOUR = 3_600_000;
+
 const now = Date.parse("2026-10-05T04:17:00Z");
 
 const release = (tag: string, publishedAt: string, extra: Partial<Release> = {}): Release => ({
@@ -28,6 +29,7 @@ describe("selectRelease", () => {
       release("v3.51.0", "2026-10-05T02:00:00Z"), // 2h old
       release("v3.50.0", "2026-10-04T05:24:00Z"), // ~23h old
     ];
+
     expect(selectRelease(releases, options)?.tag_name).toBe("v3.50.0");
   });
 
@@ -37,6 +39,7 @@ describe("selectRelease", () => {
       release("v3.51.0", "2026-10-04T05:40:00Z"),
       release("v3.50.0", "2026-10-04T05:24:00Z"),
     ];
+
     expect(selectRelease(releases, options)?.tag_name).toBe("v3.51.0");
   });
 
@@ -47,6 +50,7 @@ describe("selectRelease", () => {
       release("v1.48.0", "2026-10-01T00:00:00Z", { assets: [] }),
       release("v1.45.0", "2026-10-02T08:55:00Z"),
     ];
+
     expect(selectRelease(releases, options)?.tag_name).toBe("v1.45.0");
   });
 

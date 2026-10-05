@@ -22,6 +22,7 @@ export const findReleaseLink = (
   const pattern = new RegExp(
     `^/apk/${escapeRegExp(appPath)}/[^/]*-${escapeRegExp(slugify(version))}-release/$`,
   );
+
   return parse(listingHtml)
     .querySelectorAll("a")
     .map((anchor) => anchor.getAttribute("href") ?? "")
@@ -30,6 +31,7 @@ export const findReleaseLink = (
 
 const releaseHrefs = (html: string, appPath: string): string[] => {
   const pattern = new RegExp(`^/apk/${escapeRegExp(appPath)}/([^/]+)-release/$`);
+
   return parse(html)
     .querySelectorAll("a")
     .map((anchor) => anchor.getAttribute("href") ?? "")
@@ -44,10 +46,13 @@ const releaseHrefs = (html: string, appPath: string): string[] => {
 export const releasePrefix = (html: string, appPath: string): string | undefined => {
   const pattern = new RegExp(`^/apk/${escapeRegExp(appPath)}/(.+?)-\\d[\\w-]*-release/$`);
   const counts = new Map<string, number>();
+
   for (const href of releaseHrefs(html, appPath)) {
     const prefix = pattern.exec(href)?.[1];
+
     if (prefix !== undefined) counts.set(prefix, (counts.get(prefix) ?? 0) + 1);
   }
+
   return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
 };
 
@@ -60,8 +65,10 @@ export const findUploadsCategory = (html: string): string | undefined => {
   for (const anchor of parse(html).querySelectorAll("a")) {
     const href = anchor.getAttribute("href") ?? "";
     const match = /^\/uploads\/\?appcategory=([\w-]+)$/.exec(href);
+
     if (match?.[1] !== undefined) return match[1];
   }
+
   return undefined;
 };
 
@@ -73,29 +80,38 @@ export const uploadsPath = (category: string, page: number): string =>
 /** Variant rows (one per APK/bundle build) on a release page. */
 export const parseVariants = (releaseHtml: string): ReadonlyArray<Variant> => {
   const variants: Variant[] = [];
+
   for (const row of parse(releaseHtml).querySelectorAll("div.table-row")) {
     const href = row.querySelector("a.accent_color")?.getAttribute("href");
+
     if (href === undefined || !href.endsWith("-download/")) continue;
 
     const badges = row.querySelectorAll("span.apkm-badge").map((badge) => badge.text.trim());
+
     const kind: VariantKind | undefined = badges.includes("BUNDLE")
       ? "bundle"
       : badges.includes("APK")
         ? "apk"
         : undefined;
+
     if (kind === undefined) continue;
 
     const cells = row.querySelectorAll("div.table-cell").map((cell) => cell.text.trim());
     variants.push({ href, kind, arch: cells[1] ?? "", dpi: cells[3] ?? "" });
   }
+
   return variants;
 };
 
 const archScore = (arch: string, target: string): number | undefined => {
   const parts = arch.split("+").map((part) => part.trim().toLowerCase());
+
   if (parts.length === 1 && parts[0] === target) return 0;
+
   if (parts.includes(target)) return 1;
+
   if (parts.includes("universal") || parts.includes("noarch")) return 2;
+
   return undefined;
 };
 
@@ -116,9 +132,11 @@ export const pickVariant = (
   const allowed = variants.filter(
     (v) => options.apkFileType !== "APK_REQUIRED" || v.kind === "apk",
   );
+
   return allowed
     .flatMap((variant) => {
       const score = archScore(variant.arch, options.arch);
+
       return score === undefined ? [] : [{ variant, score }];
     })
     .sort(

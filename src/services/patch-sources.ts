@@ -42,6 +42,7 @@ export const resolveReleaseAsset = Effect.fn("resolveReleaseAsset")(function* (
     cooldownMs: cooldownHours * 3_600_000,
     hasAsset,
   });
+
   if (chosen === undefined) {
     return yield* new NoEligibleRelease({
       repo,
@@ -50,9 +51,11 @@ export const resolveReleaseAsset = Effect.fn("resolveReleaseAsset")(function* (
   }
 
   const asset = chosen.assets.find((candidate) => hasAsset(candidate.name));
+
   if (asset === undefined) {
     return yield* new NoEligibleRelease({ repo, message: "release has no matching asset" });
   }
+
   if (asset.digest === null || !asset.digest.startsWith("sha256:")) {
     return yield* new GitHubError({
       message: `${repo}@${chosen.tag_name}: GitHub reports no sha256 digest for ${asset.name}; refusing to use an unverifiable asset`,
@@ -85,6 +88,7 @@ export const resolveBundle = Effect.fn("resolveBundle")(function* (
   now: number,
 ) {
   const asset = yield* resolveReleaseAsset(source.repo, source.cooldown_hours, isMpp, now);
+
   return { source: name, ...asset } satisfies ResolvedBundle;
 });
 
@@ -118,16 +122,19 @@ export const packageTargets = Effect.fn("packageTargets")(function* (
 
   if (source.versions === "patches-list") {
     const text = yield* github.rawFile(bundle.repo, bundle.tag, "patches-list.json");
+
     const list = yield* decodeJson(
       `${bundle.repo}@${bundle.tag} patches-list.json`,
       PatchesList,
       text,
     );
+
     if (list.version !== undefined && stripV(list.version) !== stripV(bundle.tag)) {
       return yield* new GitHubError({
         message: `${bundle.repo}: patches-list.json is for ${list.version}, expected ${bundle.tag}`,
       });
     }
+
     return packageInfo(list, packageName);
   }
 
@@ -135,12 +142,15 @@ export const packageTargets = Effect.fn("packageTargets")(function* (
   const ref = bundle.successorTag ?? "main";
   const text = yield* github.rawFile(bundle.repo, ref, "patches-bundle.json");
   const info = yield* decodeJson(`${bundle.repo}@${ref} patches-bundle.json`, PatchesBundle, text);
+
   if (info.version === undefined || stripV(info.version) !== stripV(bundle.tag)) {
     return yield* new GitHubError({
       message: `${bundle.repo}: patches-bundle.json at ${ref} describes ${info.version ?? "an unknown release"}, not ${bundle.tag}. Pin "version" in the app config to bypass.`,
     });
   }
+
   if (info.app_version === undefined) return undefined;
+
   return {
     packageName,
     apkFileType: null,

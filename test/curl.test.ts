@@ -6,6 +6,7 @@ import { Shell, ShellError } from "../src/services/Shell.ts";
 
 const scripted = (outputs: ReadonlyArray<string | ShellError>, fileBytes = new Uint8Array(0)) => {
   const calls: string[][] = [];
+
   const layer = Layer.mergeAll(
     Layer.succeed(
       Shell,
@@ -14,6 +15,7 @@ const scripted = (outputs: ReadonlyArray<string | ShellError>, fileBytes = new U
           Effect.suspend(() => {
             calls.push([command, ...args]);
             const next = outputs[Math.min(calls.length - 1, outputs.length - 1)]!;
+
             return typeof next === "string"
               ? Effect.succeed({ stdout: next, stderr: "" })
               : Effect.fail(next);
@@ -22,6 +24,7 @@ const scripted = (outputs: ReadonlyArray<string | ShellError>, fileBytes = new U
     ),
     FileSystem.layerNoop({ readFile: () => Effect.succeed(fileBytes) }),
   );
+
   return {
     web: makeCurlWeb({ headers: { "user-agent": "UA/1", accept: "text/html" } }).pipe(
       Effect.provide(layer),
@@ -45,9 +48,11 @@ describe("makeCurlWeb", () => {
     Effect.gen(function* () {
       const { web, calls } = scripted(["<p>hi</p>\n200"]);
       const client = yield* web;
+
       const body = yield* client.text("https://example.test/a", {
         referer: "https://example.test/",
       });
+
       assert.strictEqual(body, "<p>hi</p>");
       const args = calls[0]!;
       assert.strictEqual(args[0], "curl");
@@ -94,6 +99,7 @@ describe("makeCurlWeb", () => {
       const { web } = scripted([
         new ShellError({ command: "curl", message: "exited with code 6: could not resolve host" }),
       ]);
+
       const client = yield* web;
       const fiber = yield* Effect.forkChild(Effect.flip(client.text("https://example.test/")));
       yield* TestClock.adjust("1 minute");

@@ -10,12 +10,14 @@ export const fetchVerified = Effect.fn("fetchVerified")(function* (
 ) {
   const web = yield* Web;
   const downloaded: Downloaded = yield* web.download(url, destination);
+
   if (downloaded.sha256 !== expectedSha256.toLowerCase()) {
     return yield* new VerificationError({
       kind: "digest",
       message: `${url}: sha256 ${downloaded.sha256} does not match the published digest ${expectedSha256}`,
     });
   }
+
   return downloaded;
 });
 

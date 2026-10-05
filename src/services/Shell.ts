@@ -41,6 +41,7 @@ export class Shell extends Context.Service<Shell, ShellClient>()("morphe-automat
         options: RunOptions = {},
       ) {
         const label = [command, ...args.slice(0, 2)].join(" ");
+
         const failed = (cause: { readonly message: string }) =>
           new ShellError({ command: label, message: cause.message });
 
@@ -62,10 +63,12 @@ export class Shell extends Context.Service<Shell, ShellClient>()("morphe-automat
                 ...(options.cwd === undefined ? {} : { cwd: options.cwd }),
               }),
             );
+
             const [stdout, stderr, exitCode] = yield* Effect.all(
               [lines(handle.stdout), lines(handle.stderr), handle.exitCode],
               { concurrency: "unbounded" },
             );
+
             if (exitCode !== 0) {
               return yield* new ShellError({
                 command: label,
@@ -73,6 +76,7 @@ export class Shell extends Context.Service<Shell, ShellClient>()("morphe-automat
                 message: `exited with code ${exitCode}: ${(stderr || stdout).split("\n").slice(-8).join("\n")}`,
               });
             }
+
             return { stdout, stderr } satisfies RunResult;
           }),
         ).pipe(Effect.mapError((error) => (error instanceof ShellError ? error : failed(error))));

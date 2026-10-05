@@ -4,6 +4,7 @@ import { extractBaseApk, signingCertSha256 } from "../src/apk/signature.ts";
 import { signedApk, zip } from "./helpers/zip.ts";
 
 const certificate = Uint8Array.from({ length: 300 }, (_, i) => (i * 7) % 251);
+
 const sha256 = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");
 
 describe("signingCertSha256", () => {
@@ -39,6 +40,7 @@ describe("extractBaseApk", () => {
       { name: "info.json", data: Uint8Array.of(123) },
       { name: "base.apk", data: base },
     ]);
+
     expect(extractBaseApk(bundle)).toEqual(base);
   });
 

@@ -20,6 +20,7 @@ const request: ApkRequest = {
 const web = (pages: Record<string, string>): WebClient => ({
   text: (url) => {
     const body = pages[url];
+
     return body === undefined ? Effect.die(new Error(`unexpected ${url}`)) : Effect.succeed(body);
   },
   json: () => Effect.die("unused"),
@@ -57,6 +58,7 @@ describe("uptodownSource", () => {
           [`${base}/download/1223565707`]: fixture("download-instagram.html"),
         }),
       );
+
       const error = yield* Effect.flip(source.fetch(request));
       assert.strictEqual(error._tag, "SourceBlocked");
       assert.include(error.message, "captcha");
@@ -72,6 +74,7 @@ describe("uptodownSource", () => {
             '<button id="detail-download-button" data-url="tok/en"></button>',
         }),
       );
+
       const file = yield* source.fetch(request);
       assert.strictEqual(file.kind, "apk");
       assert.strictEqual(file.path, "/tmp/work/instagram.apk");
@@ -83,6 +86,7 @@ describe("uptodownSource", () => {
       const source = uptodownSource(
         web({ [`${base}/versions`]: fixture("versions-instagram.html") }),
       );
+
       const error = yield* Effect.flip(source.fetch({ ...request, version: "1.0.0" }));
       assert.strictEqual(error._tag, "ApkNotFound");
     }),
