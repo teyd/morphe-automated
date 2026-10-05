@@ -21,6 +21,17 @@ export interface Downloaded {
   readonly head: Uint8Array;
 }
 
+/** The same client with default headers on every request; per-call headers win. */
+export const withHeaders = (
+  web: WebClient,
+  defaults: Readonly<Record<string, string>>,
+): WebClient => ({
+  text: (url, headers) => web.text(url, { ...defaults, ...headers }),
+  json: (url, headers) => web.json(url, { ...defaults, ...headers }),
+  download: (url, destination, headers) =>
+    web.download(url, destination, { ...defaults, ...headers }),
+});
+
 /** `PK\x03\x04`: APKs, bundles and `.mpp` files are all ZIP archives. */
 export const looksLikeZip = (head: Uint8Array): boolean =>
   head[0] === 0x50 && head[1] === 0x4b && head[2] === 0x03 && head[3] === 0x04;

@@ -1,6 +1,8 @@
 import { BunServices } from "@effect/platform-bun";
 import { Config, Console, Effect, Layer, Option } from "effect";
 import { Flag } from "effect/cli";
+import { APKMIRROR_WEB_OPTIONS } from "../apk/apkmirror.ts";
+import { CurlWeb } from "../services/Curl.ts";
 import { GitHub } from "../services/GitHub.ts";
 import { Shell } from "../services/Shell.ts";
 import { Web } from "../services/Web.ts";
@@ -31,6 +33,8 @@ export const annotate = (level: "warning" | "error", title: string, message: str
     ),
   );
 
-export const runtimeLayer = Layer.mergeAll(GitHub.layer, Web.layer, Shell.layer).pipe(
+const apkMirrorWeb = CurlWeb.layer(APKMIRROR_WEB_OPTIONS).pipe(Layer.provide(Shell.layer));
+
+export const runtimeLayer = Layer.mergeAll(GitHub.layer, Web.layer, Shell.layer, apkMirrorWeb).pipe(
   Layer.provideMerge(BunServices.layer),
 );

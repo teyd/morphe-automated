@@ -1,4 +1,4 @@
-import { Effect, FileSystem, Semaphore, type Schema } from "effect";
+import { Context, Effect, FileSystem, Layer, Semaphore, type Schema } from "effect";
 import { WebError } from "../domain/errors.ts";
 import { sha256Hex } from "../util/hash.ts";
 import { Shell } from "./Shell.ts";
@@ -109,3 +109,8 @@ export const makeCurlWeb = Effect.fn("makeCurlWeb")(function* (options: WebOptio
 
   return web;
 });
+
+/** A curl-backed web client, provided as its own service so callers pick their transport explicitly. */
+export class CurlWeb extends Context.Service<CurlWeb, WebClient>()("morphe-automated/CurlWeb") {
+  static readonly layer = (options: WebOptions) => Layer.effect(CurlWeb, makeCurlWeb(options));
+}

@@ -1,5 +1,4 @@
 import { Effect, FileSystem, Path } from "effect";
-import { FetchHttpClient } from "effect/http";
 import { APKMIRROR_WEB_OPTIONS, apkMirrorSource } from "../apk/apkmirror.ts";
 import { fetchApk } from "../apk/source.ts";
 import { uptodownSource } from "../apk/uptodown.ts";
@@ -11,9 +10,9 @@ import { runPatch } from "../patch/morphe.ts";
 import { publishRelease } from "../release/publish.ts";
 import { apkAssetName } from "../release/naming.ts";
 import { fetchVerified } from "../services/artifacts.ts";
-import { makeCurlWeb } from "../services/Curl.ts";
+import { CurlWeb } from "../services/Curl.ts";
 import { gpgVerify } from "../services/gpg.ts";
-import { Web, makeWeb } from "../services/Web.ts";
+import { Web, withHeaders } from "../services/Web.ts";
 import { sha256Hex } from "../util/hash.ts";
 import { withSigningKey } from "../signing/keystore.ts";
 import type { AppPlan } from "./plan.ts";
@@ -71,8 +70,8 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
   }
 
   // APKMirror refuses Bun's TLS fingerprint on download pages but accepts curl.
-  const mirror = yield* makeCurlWeb(APKMIRROR_WEB_OPTIONS);
-  const uptodown = yield* makeWeb({ headers: { "user-agent": BROWSER_UA } });
+  const mirror = yield* CurlWeb;
+  const uptodown = withHeaders(yield* Web, { "user-agent": BROWSER_UA });
   yield* Effect.logInfo(`[${app.slug}] fetching ${app.config.package} ${plan.inputs.appVersion}`);
 
   const stock = yield* fetchApk([apkMirrorSource(mirror), uptodownSource(uptodown)], {
@@ -152,4 +151,4 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
   }
 
   return output;
-}, Effect.provide(FetchHttpClient.layer));
+});
