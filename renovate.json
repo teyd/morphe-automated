@@ -12,5 +12,16 @@
       "enabled": false,
       "description": "Pinned to the oxlint bundled by vite-plus; move them together by hand."
     }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The trawl image pinned inside the daily workflow's shell step",
+      "managerFilePatterns": ["/^\\.github/workflows/.*\\.ya?ml$/"],
+      "matchStrings": [
+        "(?<depName>ghcr\\.io/germondai/trawl):(?<currentValue>[\\w.-]+)@(?<currentDigest>sha256:[a-f0-9]+)"
+      ],
+      "datasourceTemplate": "docker"
+    }
   ]
 }
