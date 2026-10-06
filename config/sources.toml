@@ -14,3 +14,9 @@ versions = "bundle"
 cooldown_hours = 6
 # To require a valid signature on every bundle, add the maintainer's public key to
 # config/keys/ and set: gpg_public_key = "keys/piko-newx.asc"
+
+# riky's personal bundle: a few apps Morphe's own bundle does not cover, released rarely.
+[sources.riky]
+repo = "riky-dev/morphe-patches"
+versions = "patches-list"
+cooldown_hours = 6
