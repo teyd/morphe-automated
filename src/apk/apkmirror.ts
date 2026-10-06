@@ -117,7 +117,12 @@ export const apkMirrorSource = (web: WebClient): ApkSource => {
     const releaseHtml = yield* page(releasePath);
 
     const variants = parseVariants(releaseHtml);
-    const variant = pickVariant(variants, { arch: request.arch, apkFileType: request.apkFileType });
+
+    const variant = pickVariant(variants, {
+      arch: request.arch,
+      apkFileType: request.apkFileType,
+      version: request.version,
+    });
 
     if (variant === undefined) {
       const seen = variants.map((v) => `${v.kind}/${v.arch}`).join(", ") || "none";
