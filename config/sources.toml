@@ -7,6 +7,12 @@ repo = "MorpheApp/morphe-patches"
 versions = "patches-list"
 cooldown_hours = 6
 
+# Hushfeed patches TikTok and ships nearly every day; the cooldown trims same-day hotfixes.
+[sources.hushfeed]
+repo = "SysAdminDoc/HushFeed"
+versions = "patches-list"
+cooldown_hours = 6
+
 # piko-newx ships several releases a day (sometimes minutes apart), so the cooldown matters most here.
 [sources.piko-newx]
 repo = "crimera/piko-newx"

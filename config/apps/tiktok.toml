@@ -1,0 +1,10 @@
+name = "TikTok"
+package = "com.zhiliaoapp.musically"
+sources = ["hushfeed"]
+
+# Hushfeed supports the 47.x builds and carries TikTok's signing certificate in its patch list,
+# so the stock APK from APKMirror is verified without a pinned fingerprint.
+
+[download]
+apkmirror = "tiktok-pte-ltd/tik-tok-including-musical-ly"
+uptodown = "tiktok"
