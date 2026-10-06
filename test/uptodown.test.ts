@@ -14,12 +14,12 @@ const fixture = (name: string) =>
   readFileSync(new URL(`./fixtures/uptodown/${name}`, import.meta.url), "utf8");
 
 const request: ApkRequest = {
-  packageName: "com.instagram.android",
+  packageName: "com.example.chat",
   version: "451.0.0.0.46",
   arch: "arm64-v8a",
   apkFileType: "APKM",
-  download: { uptodown: "instagram" },
-  destination: "/tmp/work/instagram",
+  download: { uptodown: "example-chat" },
+  destination: "/tmp/work/example-chat",
 };
 
 const web = (pages: Record<string, string>): WebClient => ({
@@ -33,19 +33,17 @@ const web = (pages: Record<string, string>): WebClient => ({
     Effect.succeed({ sha256: "aa", size: 1, head: new Uint8Array([0x50, 0x4b, 0x03, 0x04]) }),
 });
 
-const base = "https://instagram.en.uptodown.com/android";
+const base = "https://example-chat.en.uptodown.com/android";
 
 describe("uptodown parsing", () => {
   it("reads version rows", () => {
-    const versions = parseVersions(fixture("versions-instagram.html"));
+    const versions = parseVersions(fixture("versions-example.html"));
     assert.strictEqual(versions.length, 4);
     assert.deepStrictEqual(versions[0], { id: "1223565707", version: "451.0.0.0.46", kind: "apk" });
   });
 
   it("detects the captcha gate", () => {
-    assert.isTrue(
-      DownloadPage.$is("Captcha")(parseDownloadPage(fixture("download-instagram.html"))),
-    );
+    assert.isTrue(DownloadPage.$is("Captcha")(parseDownloadPage(fixture("download-example.html"))));
   });
 
   it("uses a direct token when the page exposes one", () => {
@@ -59,8 +57,8 @@ describe("uptodownSource", () => {
     Effect.gen(function* () {
       const source = uptodownSource(
         web({
-          [`${base}/versions`]: fixture("versions-instagram.html"),
-          [`${base}/download/1223565707`]: fixture("download-instagram.html"),
+          [`${base}/versions`]: fixture("versions-example.html"),
+          [`${base}/download/1223565707`]: fixture("download-example.html"),
         }),
       );
 
@@ -74,7 +72,7 @@ describe("uptodownSource", () => {
     Effect.gen(function* () {
       const source = uptodownSource(
         web({
-          [`${base}/versions`]: fixture("versions-instagram.html"),
+          [`${base}/versions`]: fixture("versions-example.html"),
           [`${base}/download/1223565707`]:
             '<button id="detail-download-button" data-url="tok/en"></button>',
         }),
@@ -82,14 +80,14 @@ describe("uptodownSource", () => {
 
       const file = yield* source.fetch(request);
       assert.strictEqual(file.kind, "apk");
-      assert.strictEqual(file.path, "/tmp/work/instagram.apk");
+      assert.strictEqual(file.path, "/tmp/work/example-chat.apk");
     }),
   );
 
   it.effect("reports an unknown version as not found", () =>
     Effect.gen(function* () {
       const source = uptodownSource(
-        web({ [`${base}/versions`]: fixture("versions-instagram.html") }),
+        web({ [`${base}/versions`]: fixture("versions-example.html") }),
       );
 
       const error = yield* Effect.flip(source.fetch({ ...request, version: "1.0.0" }));
