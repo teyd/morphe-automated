@@ -26,3 +26,10 @@ cooldown_hours = 6
 repo = "riky-dev/morphe-patches"
 versions = "patches-list"
 cooldown_hours = 6
+
+# hoo-dles' bundle: many subscription apps Morphe's own bundle does not cover. Some patches are
+# strict about the app version, which the patch list's targets handle.
+[sources.hoo-dles]
+repo = "hoo-dles/morphe-patches"
+versions = "patches-list"
+cooldown_hours = 6

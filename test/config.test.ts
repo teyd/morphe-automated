@@ -8,10 +8,17 @@ const read = (file: string) => readFileSync(new URL(`../config/${file}`, import.
 describe("shipped config", () => {
   it("parses sources.toml", async () => {
     const sources = await Effect.runPromise(parseSources(read("sources.toml")));
-    expect(Object.keys(sources).sort()).toEqual(["hushfeed", "morphe", "piko-newx", "riky"]);
+    expect(Object.keys(sources).sort()).toEqual([
+      "hoo-dles",
+      "hushfeed",
+      "morphe",
+      "piko-newx",
+      "riky",
+    ]);
     expect(sources["piko-newx"]?.versions).toBe("bundle");
     expect(sources.hushfeed?.versions).toBe("patches-list");
     expect(sources.riky?.repo).toBe("riky-dev/morphe-patches");
+    expect(sources["hoo-dles"]?.repo).toBe("hoo-dles/morphe-patches");
     expect(sources.morphe?.cooldown_hours).toBe(6);
   });
 
