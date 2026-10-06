@@ -157,6 +157,34 @@ describe("packageTargets", () => {
     }),
   );
 
+  it.effect("ignores targets that carry no version", () =>
+    Effect.gen(function* () {
+      const list = JSON.stringify({
+        version: "1.45.0",
+        patches: [
+          {
+            name: "p",
+            compatiblePackages: [
+              {
+                packageName: "com.example",
+                targets: [
+                  { version: null, isExperimental: false },
+                  { version: "1.0.0", isExperimental: false },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      const info = yield* packageTargets(bundle, source(), "com.example").pipe(
+        Effect.provide(fakeGitHub([], { "o/r@v1.45.0:patches-list.json": list })),
+      );
+
+      assert.deepStrictEqual(info?.versions, [{ version: "1.0.0", experimental: false }]);
+    }),
+  );
+
   it.effect("reads the generated shape (compatibility details, versions record)", () =>
     Effect.gen(function* () {
       const list = JSON.stringify({

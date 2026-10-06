@@ -10,7 +10,8 @@ export const PatchesBundle = Schema.Struct({
 export type PatchesBundle = typeof PatchesBundle.Type;
 
 export const PatchTarget = Schema.Struct({
-  version: Schema.String,
+  /** Null on patches that are not tied to a version (some lists use this for "any version"). */
+  version: Schema.NullOr(Schema.String),
   /** MorpheApp/morphe-patches spells this `isExperimental`. */
   isExperimental: Schema.optional(Schema.Boolean),
   /** The patches library's `generatePatchesList` task spells it `experimental`. */
@@ -107,6 +108,9 @@ export const packageInfo = (list: PatchesList, packageName: string): PackageInfo
       for (const sig of pkg.signatures ?? []) signatures.add(sig.toLowerCase());
 
       for (const target of pkg.targets ?? []) {
+        // A null version marks a patch not tied to one, so there is nothing to build against.
+        if (target.version === null) continue;
+
         // A version is experimental only if every patch that lists it says so.
         const experimental =
           (target.isExperimental ?? target.experimental ?? false) &&
