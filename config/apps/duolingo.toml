@@ -8,6 +8,8 @@ expected_signatures = ["1233ff6de4c70ef4d7deae54af15b167fc7cfd2539517bd2175870f3
 
 # hoo-dles marks Duolingo's patches strict about the app version, and APKMirror only ships that
 # version as a 4-arch bundle, so the CLI merges the arm64-v8a bundle.
+# The Enable Premium patch keeps its default premiumVariant (SUPER); add a [patches] options
+# table to switch it to MAX.
 [download]
 apkmirror = "duolingo/duolingo-duolingo"
 uptodown = "duolingo"
