@@ -11,6 +11,7 @@ describe("shipped config", () => {
     expect(Object.keys(sources).sort()).toEqual([
       "hoo-dles",
       "hushfeed",
+      "kveld",
       "morphe",
       "piko-newx",
       "riky",
@@ -19,6 +20,7 @@ describe("shipped config", () => {
     expect(sources.hushfeed?.versions).toBe("patches-list");
     expect(sources.riky?.repo).toBe("riky-dev/morphe-patches");
     expect(sources["hoo-dles"]?.repo).toBe("hoo-dles/morphe-patches");
+    expect(sources.kveld?.repo).toBe("kveld9/kveld-morphe-patches");
     expect(sources.morphe?.cooldown_hours).toBe(6);
   });
 
@@ -64,6 +66,16 @@ describe("app defaults", () => {
     expect(app.config.arch).toBe("arm64-v8a");
     expect(app.config.allow_experimental).toBe(false);
     expect(app.config.patches).toEqual({ enable: [], disable: [], exclusive: false, options: {} });
+  });
+
+  it("reads Brave's github release assets", async () => {
+    const app = await Effect.runPromise(parseApp("brave", read("apps/brave.toml")));
+
+    expect(app.config.download.github).toBe("brave/brave-browser");
+    expect(app.config.download.github_assets).toEqual({
+      "arm64-v8a": "BraveMonoarm64.apk",
+      "armeabi-v7a": "BraveMonoarm.apk",
+    });
   });
 
   it("rejects an app without sources", async () => {
