@@ -1,0 +1,13 @@
+name = "Komoot"
+package = "de.komoot.android"
+sources = ["riky"]
+
+# riky's patch list has no certificate for Komoot, so this was pinned from the first APKMirror
+# download (trust on first use).
+expected_signatures = ["fdae450b98a6ff14229c44f2fcb22ab4a2e9dfef634d3bfc4ad1b7960d011aa8"]
+
+# APKMirror only has 2026.34.2 as a bundle (no plain APK), and riky's list marks the app "APK"
+# (preferred, not required), so the CLI merges the arm64-v8a bundle. Uptodown only has an XAPK.
+[download]
+apkmirror = "komoot-gmbh/komoot-cycling-hiking-mountain-biking-maps"
+uptodown = "komoot"
