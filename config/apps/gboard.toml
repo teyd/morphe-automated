@@ -1,0 +1,13 @@
+name = "Gboard"
+package = "com.google.android.inputmethod.latin"
+sources = ["gboard-patches"]
+
+# The patch list carries no signing certificate, so this was pinned from the first APKMirror
+# download (trust on first use). Gboard spells its split builds' versionName as
+# `18.0.3.954559732-release-arm64-v8a`; APKMirror drops the channel and architecture from
+# release URLs, which is why the downloader strips those before matching a version.
+expected_signatures = ["f0fd6c5b410f25cb25c3b53346c8972fae30f8ee7411df910480ad6b2d60db83"]
+
+[download]
+apkmirror = "google-inc/gboard"
+uptodown = "google-keyboard"

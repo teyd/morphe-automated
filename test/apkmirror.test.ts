@@ -132,6 +132,44 @@ describe("apkMirrorSource", () => {
     }),
   );
 
+  it.effect("follows a split build's guessed release URL to its release-channel APK", () =>
+    Effect.gen(function* () {
+      const release = "/apk/google-inc/gboard/gboard-the-google-keyboard-18-0-3-954559732-release/";
+      const variant = `${release}gboard-the-google-keyboard-18-0-3-954559732-release-arm64-v8a-4-android-apk-download/`;
+      const button = `${variant}download/?key=d403f184dc3cb86e5b2e0084960ae4114c7c1a68&forcebaseapk=true`;
+
+      const file =
+        "/wp-content/themes/APKMirror/download.php?id=15424474&key=6041cabc293580c7f39c485d42023966f2e237ef&forcebaseapk=true";
+
+      const { web, requested } = fakeWeb({
+        "/apk/google-inc/gboard/": fixture("listing-gboard.html"),
+        [release]: fixture("release-gboard-18.0.3.954559732.html"),
+        [variant]: fixture("variant-gboard-18.0.3.954559732-apk.html"),
+        [button]: fixture("download-gboard-18.0.3.954559732-apk.html"),
+      });
+
+      const apk = yield* apkMirrorSource(web).fetch({
+        packageName: "com.google.android.inputmethod.latin",
+        version: "18.0.3.954559732-release-arm64-v8a",
+        arch: "arm64-v8a",
+        apkFileType: null,
+        download: { apkmirror: "google-inc/gboard" },
+        destination: "/tmp/work/gboard",
+      });
+
+      assert.deepStrictEqual(requested, [
+        "/apk/google-inc/gboard/",
+        release,
+        release,
+        variant,
+        button,
+        file,
+      ]);
+      assert.strictEqual(apk.kind, "apk");
+      assert.strictEqual(apk.path, "/tmp/work/gboard.apk");
+    }),
+  );
+
   it.effect("reports a version found nowhere as not found", () =>
     Effect.gen(function* () {
       const { web } = fakeWeb({

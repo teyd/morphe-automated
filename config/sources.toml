@@ -40,3 +40,9 @@ cooldown_hours = 6
 repo = "kveld9/kveld-morphe-patches"
 versions = "patches-list"
 cooldown_hours = 6
+
+# Gboard Patches tracks Google's keyboard with global and Taiwan-focused enhancements.
+[sources.gboard-patches]
+repo = "jasonwu1994/Gboard-patches"
+versions = "patches-list"
+cooldown_hours = 6

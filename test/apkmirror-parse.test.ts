@@ -4,6 +4,7 @@ import {
   findUploadsCategory,
   guessReleasePath,
   releasePrefix,
+  releaseUrlVersion,
   uploadsPath,
   findDownloadButton,
   findDownloadLink,
@@ -32,6 +33,29 @@ describe("findReleaseLink", () => {
   it("returns undefined for versions not on the page", () => {
     expect(findReleaseLink(listing, "x-corp/twitter", "1.0.0")).toBeUndefined();
   });
+
+  it("ignores the split build's channel and architecture suffix", () => {
+    expect(
+      findReleaseLink(
+        fixture("listing-gboard.html"),
+        "google-inc/gboard",
+        "18.4.1.985164140-release-arm64-v8a",
+      ),
+    ).toBe("/apk/google-inc/gboard/gboard-the-google-keyboard-18-4-1-985164140-release/");
+  });
+});
+
+describe("releaseUrlVersion", () => {
+  it("strips the channel and architecture split apps append to versionName", () => {
+    expect(releaseUrlVersion("18.0.3.954559732-release-arm64-v8a")).toBe("18.0.3.954559732");
+    expect(releaseUrlVersion("18.0.3.954559732-lite_release-armeabi-v7a")).toBe("18.0.3.954559732");
+    expect(releaseUrlVersion("18.0.3.954559732-beta-x86_64")).toBe("18.0.3.954559732");
+  });
+
+  it("leaves versions APKMirror keeps whole", () => {
+    expect(releaseUrlVersion("21.16.256")).toBe("21.16.256");
+    expect(releaseUrlVersion("12.29.1-prod.01")).toBe("12.29.1-prod.01");
+  });
 });
 
 describe("finding releases beyond the first page", () => {
@@ -54,6 +78,16 @@ describe("finding releases beyond the first page", () => {
     expect(guessReleasePath("x-corp/twitter", "x", "12.29.1-prod.01")).toBe(
       "/apk/x-corp/twitter/x-12-29-1-prod-01-release/",
     );
+  });
+
+  it("guesses a split build's release URL without its channel and architecture", () => {
+    expect(
+      guessReleasePath(
+        "google-inc/gboard",
+        "gboard-the-google-keyboard",
+        "18.0.3.954559732-release-arm64-v8a",
+      ),
+    ).toBe("/apk/google-inc/gboard/gboard-the-google-keyboard-18-0-3-954559732-release/");
   });
 
   it("finds the uploads category and builds paginated paths", () => {
@@ -102,6 +136,42 @@ describe("parseVariants / pickVariant", () => {
         { arch: "x86", apkFileType: null },
       ),
     ).toBeUndefined();
+  });
+
+  it("reads the version each row belongs to", () => {
+    expect(variants.map((v) => v.version)).toEqual([
+      "21.16.256",
+      "21.16.256",
+      "21.16.256",
+      "21.16.256",
+    ]);
+  });
+});
+
+describe("Gboard split builds", () => {
+  const variants = parseVariants(fixture("release-gboard-18.0.3.954559732.html"));
+  const version = "18.0.3.954559732-release-arm64-v8a";
+
+  it("keeps the channel and architecture in each row's version", () => {
+    expect(variants.map((v) => v.version)).toEqual([
+      version,
+      version,
+      "18.0.3.954559732-lite_release-arm64-v8a",
+      "18.0.3.954559732-beta-arm64-v8a",
+      "18.0.3.954559732-beta-arm64-v8a",
+      "18.0.3.954559732-lite_beta-arm64-v8a",
+    ]);
+  });
+
+  it("picks the patched build even when beta and lite builds come first", () => {
+    const picked = pickVariant([...variants].reverse(), {
+      arch: "arm64-v8a",
+      apkFileType: null,
+      version,
+    });
+
+    expect(picked?.kind).toBe("apk");
+    expect(picked?.href).toContain("-release-arm64-v8a-4-android-apk-download/");
   });
 });
 
