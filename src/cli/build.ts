@@ -34,7 +34,13 @@ export const build = Command.make(
     }
 
     const repo = yield* repository;
-    const plan = yield* planApp(found, loaded, { now: Date.now(), repo, force: true });
+    const plan = yield* planApp(found, loaded, { now: Date.now(), repo, force: !publish });
+
+    if (!plan.decision.build) {
+      yield* Console.log(`${app}: skipped build and publication (${plan.decision.reason})`);
+
+      return;
+    }
 
     const output = yield* buildApp(plan, {
       config: loaded,
@@ -46,6 +52,4 @@ export const build = Command.make(
 
     yield* Console.log(`\nBuilt ${output}`);
   }),
-).pipe(
-  Command.withDescription("Build one app (always builds; `check` decides which apps need it)"),
-);
+).pipe(Command.withDescription("Build one app; with --publish, skip unchanged inputs"));

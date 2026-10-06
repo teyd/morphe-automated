@@ -1,5 +1,5 @@
-import { Effect, Option, Schema } from "effect";
-import type { GitHubError } from "../domain/errors.ts";
+import { Effect, Schema } from "effect";
+import { GitHubError } from "../domain/errors.ts";
 import type { Release } from "../domain/github.ts";
 import { BuildManifest } from "../domain/manifest.ts";
 import { GitHub } from "../services/GitHub.ts";
@@ -22,7 +22,7 @@ export const releasesToPrune = (
 
 /**
  * What we built last time, read from the newest release's `build-manifest.json`.
- * No previous release, an unreadable manifest, or no repository to look in all mean "build".
+ * No previous release or no repository means "build". Unreadable state fails closed.
  */
 export const previousBuild = Effect.fn("previousBuild")(function* (
   repo: string | undefined,
@@ -32,18 +32,25 @@ export const previousBuild = Effect.fn("previousBuild")(function* (
   const github = yield* GitHub;
   const releases = yield* github.releases(repo);
 
-  const asset = releasesOf(releases, slug)
-    .flatMap((release) => release.assets)
-    .find((candidate) => candidate.name === MANIFEST_ASSET);
+  const latest = releasesOf(releases, slug)[0];
 
-  if (asset === undefined) return undefined;
+  if (latest === undefined) return undefined;
 
-  const json = yield* github.assetJson(repo, asset.id).pipe(Effect.option);
+  const asset = latest.assets.find((candidate) => candidate.name === MANIFEST_ASSET);
 
-  if (Option.isNone(json)) return undefined;
-  const manifest = yield* Schema.decodeUnknownEffect(BuildManifest)(json.value).pipe(Effect.option);
+  if (asset === undefined) {
+    return yield* new GitHubError({
+      message: `${repo} ${latest.tag_name}: missing ${MANIFEST_ASSET}; refusing to assume inputs changed`,
+    });
+  }
 
-  return Option.getOrUndefined(manifest);
+  const json = yield* github.assetJson(repo, asset.id);
+
+  return yield* Schema.decodeUnknownEffect(BuildManifest)(json).pipe(
+    Effect.mapError(
+      (error) => new GitHubError({ message: `${repo} ${latest.tag_name}: ${error.message}` }),
+    ),
+  );
 });
 
 export type PreviousBuildError = GitHubError;

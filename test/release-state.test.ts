@@ -1,6 +1,7 @@
 import { assert, describe, it } from "@effect/vitest";
 import { Effect, FileSystem, Layer, Path, type Schema } from "effect";
 import type { Release } from "../src/domain/github.ts";
+import { GitHubError } from "../src/domain/errors.ts";
 import type { BuildManifest, FingerprintInputs } from "../src/domain/manifest.ts";
 import { MANIFEST_ASSET } from "../src/release/naming.ts";
 import {
@@ -107,16 +108,55 @@ describe("previousBuild", () => {
     }),
   );
 
-  it.effect(
-    "treats a missing repository, release or unreadable manifest as no previous build",
-    () =>
-      Effect.gen(function* () {
-        const none = github([], manifest);
-        assert.isUndefined(yield* previousBuild(undefined, "youtube").pipe(Effect.provide(none)));
-        assert.isUndefined(yield* previousBuild("o/r", "youtube").pipe(Effect.provide(none)));
-        const garbage = github(releases, { not: "a manifest" });
-        assert.isUndefined(yield* previousBuild("o/r", "youtube").pipe(Effect.provide(garbage)));
-      }),
+  it.effect("treats a missing repository or release as no previous build", () =>
+    Effect.gen(function* () {
+      const none = github([], manifest);
+      assert.isUndefined(yield* previousBuild(undefined, "youtube").pipe(Effect.provide(none)));
+      assert.isUndefined(yield* previousBuild("o/r", "youtube").pipe(Effect.provide(none)));
+    }),
+  );
+
+  it.effect("fails when the latest manifest is invalid", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        previousBuild("o/r", "youtube").pipe(
+          Effect.provide(github(releases, { not: "a manifest" })),
+        ),
+      );
+
+      assert.strictEqual(error._tag, "GitHubError");
+    }),
+  );
+
+  it.effect("does not fall back to an older manifest when the newest is missing", () =>
+    Effect.gen(function* () {
+      const list = [release("youtube-21.16.256-new", "2026-10-06T00:00:00Z", []), ...releases];
+
+      const error = yield* Effect.flip(
+        previousBuild("o/r", "youtube").pipe(Effect.provide(github(list, manifest))),
+      );
+
+      assert.include(error.message, "missing build-manifest.json");
+    }),
+  );
+
+  it.effect("propagates manifest download failures instead of scheduling a rebuild", () =>
+    Effect.gen(function* () {
+      const failure = new GitHubError({ message: "HTTP 403", status: 403 });
+
+      const layer = Layer.succeed(
+        GitHub,
+        GitHub.of({
+          releases: () => Effect.succeed(releases),
+          releaseByTag: () => Effect.die("unused"),
+          rawFile: () => Effect.die("unused"),
+          assetJson: () => Effect.fail(failure),
+        }),
+      );
+
+      const error = yield* Effect.flip(previousBuild("o/r", "youtube").pipe(Effect.provide(layer)));
+      assert.strictEqual(error, failure);
+    }),
   );
 });
 
@@ -183,7 +223,8 @@ describe("publishing", () => {
             releases: () => Effect.succeed(releases),
             releaseByTag: () => Effect.die("unused"),
             rawFile: () => Effect.die("unused"),
-            assetJson: () => Effect.die("unused"),
+            assetJson: () =>
+              Effect.succeed({ ...manifest, inputs: { ...inputs, configHash: "old" } }),
           }),
         ),
         Path.layer,
@@ -208,6 +249,33 @@ describe("publishing", () => {
       ]);
       assert.strictEqual(commands.length, 2);
       assert.deepStrictEqual(written, ["/work/build-manifest.json", "/work/release-notes.md"]);
+    }),
+  );
+
+  it.effect("skips unchanged inputs without writing, publishing or pruning", () =>
+    Effect.gen(function* () {
+      const layer = Layer.mergeAll(
+        Layer.succeed(
+          GitHub,
+          GitHub.of({
+            releases: () => Effect.succeed(releases),
+            releaseByTag: () => Effect.die("unused"),
+            rawFile: () => Effect.die("unused"),
+            assetJson: () => Effect.succeed(manifest),
+          }),
+        ),
+        Layer.succeed(Shell, Shell.of({ run: () => Effect.die("must not publish or prune") })),
+        Path.layer,
+        FileSystem.layerNoop({
+          copyFile: () => Effect.die("must not copy APK"),
+          writeFileString: () => Effect.die("must not write release files"),
+        }),
+      );
+
+      yield* publishRelease({
+        ...job,
+        manifest: { ...manifest, apk: { ...manifest.apk, sha256: "different-output" } },
+      }).pipe(Effect.provide(layer));
     }),
   );
 });
