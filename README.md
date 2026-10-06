@@ -4,8 +4,7 @@ Builds Morphe-patched Android apps on GitHub Actions, signs them with your own k
 [Obtainium](https://github.com/ImranR98/Obtainium) updates from. A daily job builds an app only when its inputs changed.
 
 Apps: YouTube, YouTube Music, Reddit ([Morphe](https://github.com/MorpheApp/morphe-patches)), X
-([piko-newx](https://github.com/crimera/piko-newx)). Instagram ([piko](https://github.com/crimera/piko)) is configured but
-disabled. Add apps or patch repos with a TOML file in `config/`.
+([piko-newx](https://github.com/crimera/piko-newx)). Add apps or patch repos with a TOML file in `config/`.
 
 ## Setup
 
@@ -38,7 +37,6 @@ An app rebuilds when its latest release's stored fingerprint differs from the cu
 ## Known limits
 
 - Uptodown is a dead fallback: those app pages now return 410. APKMirror is the only working source.
-- Instagram's APKMirror page stays on a Turnstile challenge from GitHub's IPs. The stock bundle is taken from a public GitHub release instead.
 - CI fetches APKMirror through trawl, because GitHub's own IPs are blocked.
 
 ## Legal

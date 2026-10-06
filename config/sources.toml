@@ -7,11 +7,6 @@ repo = "MorpheApp/morphe-patches"
 versions = "patches-list"
 cooldown_hours = 6
 
-[sources.piko]
-repo = "crimera/piko"
-versions = "patches-list"
-cooldown_hours = 6
-
 # piko-newx ships several releases a day (sometimes minutes apart), so the cooldown matters most here.
 [sources.piko-newx]
 repo = "crimera/piko-newx"

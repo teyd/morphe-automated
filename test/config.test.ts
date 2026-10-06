@@ -8,7 +8,7 @@ const read = (file: string) => readFileSync(new URL(`../config/${file}`, import.
 describe("shipped config", () => {
   it("parses sources.toml", async () => {
     const sources = await Effect.runPromise(parseSources(read("sources.toml")));
-    expect(Object.keys(sources).sort()).toEqual(["morphe", "piko", "piko-newx"]);
+    expect(Object.keys(sources).sort()).toEqual(["morphe", "piko-newx"]);
     expect(sources["piko-newx"]?.versions).toBe("bundle");
     expect(sources.morphe?.cooldown_hours).toBe(6);
   });
@@ -20,7 +20,7 @@ describe("shipped config", () => {
       f.endsWith(".toml"),
     );
 
-    expect(files.length).toBeGreaterThanOrEqual(5);
+    expect(files.length).toBeGreaterThanOrEqual(4);
 
     for (const file of files) {
       const app = await Effect.runPromise(
