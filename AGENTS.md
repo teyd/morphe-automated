@@ -6,6 +6,7 @@ Finish every change with `mise run check && mise run test`.
 
 ## Conventions
 
+- Keep user-facing documentation in `README.md` and research findings in PR descriptions or session replies. Never add a `docs/` directory or standalone documentation/research files to this repo.
 - Effect 4: `Context.Service` for services, `Schema.TaggedError` for errors, `Effect.fn("name")(function*..., ...combinators)`.
   Extra combinators go in as arguments, since the result of `Effect.fn` has no `.pipe`.
 - Tests run on Node under Vitest. Cover Effect code with fake layers; reach real processes and the network only through scripts.

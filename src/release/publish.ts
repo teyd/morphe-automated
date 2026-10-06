@@ -1,6 +1,7 @@
 import { Effect, FileSystem, Path } from "effect";
 import { GitHubError } from "../domain/errors.ts";
 import type { BuildManifest } from "../domain/manifest.ts";
+import { decide } from "../plan/fingerprint.ts";
 import { GitHub } from "../services/GitHub.ts";
 import { Shell } from "../services/Shell.ts";
 import {
@@ -10,7 +11,7 @@ import {
   releaseTitle,
   type ReleaseIdentity,
 } from "./naming.ts";
-import { releasesToPrune } from "./state.ts";
+import { previousBuild, releasesToPrune } from "./state.ts";
 
 /** Newest releases kept per app: the current one plus one to roll back to. */
 export const KEEP_PER_APP = 2;
@@ -70,6 +71,14 @@ export const createArgs = (
 
 /** Create the release, then delete this app's releases beyond the newest `KEEP_PER_APP`. */
 export const publishRelease = Effect.fn("publishRelease")(function* (job: PublishJob) {
+  const previous = yield* previousBuild(job.repo, job.identity.slug);
+
+  if (!decide(previous?.inputs, job.manifest.inputs, false).build) {
+    yield* Effect.logInfo(`[${job.identity.slug}] skipped publication (up to date)`);
+
+    return;
+  }
+
   const shell = yield* Shell;
   const github = yield* GitHub;
   const fs = yield* FileSystem.FileSystem;

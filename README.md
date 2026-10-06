@@ -45,6 +45,10 @@ An app rebuilds when its latest release's stored fingerprint differs from the cu
 - a new Morphe CLI **major or minor** version;
 - changed app config, or a different signing certificate.
 
+Publishing rechecks inputs and skips unchanged apps, even in a forced workflow run. To rebuild an
+unchanged APK locally without publishing, use `mise run build <app>`. An unreadable latest release
+manifest fails the check rather than being treated as a new app.
+
 ## Known limits
 
 - Uptodown is a dead fallback: those app pages now return 410. APKMirror is the working fallback, except
