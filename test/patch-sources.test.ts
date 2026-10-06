@@ -157,6 +157,57 @@ describe("packageTargets", () => {
     }),
   );
 
+  it.effect("reads the generated shape (compatibility details, versions record)", () =>
+    Effect.gen(function* () {
+      const list = JSON.stringify({
+        version: "0.67.1",
+        appNames: { "com.zhiliaoapp.musically": "TikTok" },
+        patches: [
+          {
+            name: "Downloads",
+            compatiblePackages: { "com.zhiliaoapp.musically": ["47.1.3", "47.1.4"] },
+            compatibility: [
+              {
+                name: "TikTok",
+                packageName: "com.zhiliaoapp.musically",
+                signatures: ["9041803E91BCB814B4B4399FB5C85A91640B755E5E8BA76813814BF4CF2AB5BA"],
+                targets: [
+                  { version: "47.1.3", experimental: false },
+                  { version: "47.1.4", experimental: true },
+                ],
+              },
+            ],
+          },
+          // A patch the generated list records only as a version, with no compatibility details.
+          { name: "Settings", compatiblePackages: { "com.zhiliaoapp.musically": ["47.1.2"] } },
+        ],
+      });
+
+      const info = yield* packageTargets(
+        { ...bundle, tag: "v0.67.1" },
+        source(),
+        "com.zhiliaoapp.musically",
+      ).pipe(Effect.provide(fakeGitHub([], { "o/r@v0.67.1:patches-list.json": list })));
+
+      assert.strictEqual(info?.apkFileType, null);
+      assert.deepStrictEqual(info?.signatures, [
+        "9041803e91bcb814b4b4399fb5c85a91640b755e5e8ba76813814bf4cf2ab5ba",
+      ]);
+      assert.deepStrictEqual(info?.versions, [
+        { version: "47.1.3", experimental: false },
+        { version: "47.1.4", experimental: true },
+        { version: "47.1.2", experimental: false },
+      ]);
+
+      const chosen = yield* chooseAppVersion(info, "com.zhiliaoapp.musically", {
+        pin: undefined,
+        allowExperimental: false,
+      });
+
+      assert.strictEqual(chosen, "47.1.3");
+    }),
+  );
+
   it.effect("reads the lagging patches-bundle.json from the successor's tag", () =>
     Effect.gen(function* () {
       const info = yield* packageTargets(
