@@ -56,6 +56,10 @@ export const AppConfig = Schema.Struct({
     apkmirror: Schema.optionalKey(Schema.String),
     /** Subdomain as in `https://<slug>.en.uptodown.com/android`. */
     uptodown: Schema.optionalKey(Schema.String),
+    /** `owner/repo` whose GitHub release carries the stock APK, e.g. `brave/brave-browser`. */
+    github: Schema.optionalKey(RepoName),
+    /** Release asset name per architecture, e.g. `arm64-v8a = "app-arm64.apk"`. */
+    github_assets: Schema.optionalKey(Schema.Record(Schema.String, Schema.String)),
   }),
 });
 

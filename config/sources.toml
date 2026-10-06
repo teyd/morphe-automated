@@ -34,6 +34,13 @@ repo = "hoo-dles/morphe-patches"
 versions = "patches-list"
 cooldown_hours = 6
 
+# kveld's bundle: Brave plus Gboard, Hevy, TikTok, NokoPrint and Xiaomi Earbuds. Brave is the app
+# we build from it; its targets carry the exact version the native patches expect.
+[sources.kveld]
+repo = "kveld9/kveld-morphe-patches"
+versions = "patches-list"
+cooldown_hours = 6
+
 # Gboard Patches tracks Google's keyboard with global and Taiwan-focused enhancements.
 [sources.gboard-patches]
 repo = "jasonwu1994/Gboard-patches"

@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
 import { Effect, Match } from "effect";
-import { ApkNotFound, SourceBlocked } from "../src/domain/errors.ts";
+import { ApkNotFound, SourceBlocked, VerificationError } from "../src/domain/errors.ts";
 import { fetchApk, type ApkFile, type ApkRequest, type ApkSource } from "../src/apk/source.ts";
 
 const request: ApkRequest = {
@@ -14,7 +14,7 @@ const request: ApkRequest = {
 
 const file: ApkFile = { source: "good", kind: "apk", path: "/tmp/x.apk", sha256: "aa", size: 1 };
 
-const source = (name: string, outcome: "ok" | "blocked" | "missing"): ApkSource => ({
+const source = (name: string, outcome: "ok" | "blocked" | "missing" | "invalid"): ApkSource => ({
   name,
   fetch: () =>
     Match.value(outcome).pipe(
@@ -24,6 +24,9 @@ const source = (name: string, outcome: "ok" | "blocked" | "missing"): ApkSource 
       ),
       Match.when("missing", () =>
         Effect.fail(new ApkNotFound({ source: name, message: "no such version" })),
+      ),
+      Match.when("invalid", () =>
+        Effect.fail(new VerificationError({ kind: "digest", message: "bad digest" })),
       ),
       Match.exhaustive,
     ),
@@ -57,6 +60,16 @@ describe("fetchApk", () => {
       assert.strictEqual(error._tag, "ApkNotFound");
       assert.include(error.message, "a: cloudflare");
       assert.include(error.message, "b: no such version");
+    }),
+  );
+
+  it.effect("stops instead of falling through when a source fails verification", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(
+        fetchApk([source("a", "invalid"), source("b", "ok")], request),
+      );
+
+      assert.strictEqual(error._tag, "VerificationError");
     }),
   );
 

@@ -12,6 +12,7 @@ describe("shipped config", () => {
       "gboard-patches",
       "hoo-dles",
       "hushfeed",
+      "kveld",
       "morphe",
       "piko-newx",
       "riky",
@@ -21,6 +22,7 @@ describe("shipped config", () => {
     expect(sources["gboard-patches"]?.repo).toBe("jasonwu1994/Gboard-patches");
     expect(sources.riky?.repo).toBe("riky-dev/morphe-patches");
     expect(sources["hoo-dles"]?.repo).toBe("hoo-dles/morphe-patches");
+    expect(sources.kveld?.repo).toBe("kveld9/kveld-morphe-patches");
     expect(sources.morphe?.cooldown_hours).toBe(6);
   });
 
@@ -68,6 +70,16 @@ describe("app defaults", () => {
     expect(app.config.patches).toEqual({ enable: [], disable: [], exclusive: false, options: {} });
   });
 
+  it("reads Brave's github release assets", async () => {
+    const app = await Effect.runPromise(parseApp("brave", read("apps/brave.toml")));
+
+    expect(app.config.download.github).toBe("brave/brave-browser");
+    expect(app.config.download.github_assets).toEqual({
+      "arm64-v8a": "BraveMonoarm64.apk",
+      "armeabi-v7a": "BraveMonoarm.apk",
+    });
+  });
+
   it("rejects an app without sources", async () => {
     const result = await Effect.runPromise(
       Effect.flip(parseApp("bad", 'name = "Bad"\npackage = "x"\nsources = []\n[download]\n')),
@@ -99,5 +111,21 @@ describe("configHash", () => {
 
     expect(configHash(renamed.config)).toBe(configHash(base.config));
     expect(configHash(patched.config)).not.toBe(configHash(base.config));
+  });
+
+  it("changes when the download source changes", async () => {
+    const base = await Effect.runPromise(parseApp("youtube", read("apps/youtube.toml")));
+
+    const resourced = await Effect.runPromise(
+      parseApp(
+        "youtube",
+        read("apps/youtube.toml").replace(
+          'apkmirror = "google-inc/youtube"',
+          'apkmirror = "someone-else/youtube"',
+        ),
+      ),
+    );
+
+    expect(configHash(resourced.config)).not.toBe(configHash(base.config));
   });
 });

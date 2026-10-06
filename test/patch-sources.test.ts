@@ -39,6 +39,7 @@ const fakeGitHub = (releases: ReadonlyArray<Release>, files: Record<string, stri
     GitHub,
     GitHub.of({
       releases: () => Effect.succeed(releases),
+      releaseByTag: () => Effect.die("unused"),
       rawFile: (repo, ref, path) => {
         const body = files[`${repo}@${ref}:${path}`];
 

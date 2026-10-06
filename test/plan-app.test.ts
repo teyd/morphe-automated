@@ -105,6 +105,7 @@ const world = (previous: BuildManifest | undefined, patchesTag = "v1.45.0") => {
               Match.orElse(() => mine),
             ),
           ),
+        releaseByTag: () => Effect.die("unused"),
         rawFile: () => Effect.succeed(patchesList.replace('"1.45.0"', `"${patchesTag.slice(1)}"`)),
         assetJson: () =>
           previous === undefined

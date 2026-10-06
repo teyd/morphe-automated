@@ -1,0 +1,16 @@
+name = "Brave"
+package = "com.brave.browser"
+sources = ["kveld"]
+
+# kveld's patch list carries no certificate for Brave, so this was pinned from APKMirror's signature
+# listing (trust on first use) and cross-checked against Brave's official GitHub APK; both agree.
+expected_signatures = ["9c2db70513515fdbfbbc585b3edf3d7123d4dc67c94ffd306361c1d79bbf18ac"]
+
+# kveld's native patches target the standalone monolith's libchrome.so offsets, so take the stock APK
+# from Brave's own releases. APKMirror ships 1.96.61 only as a 4-arch bundle, which kveld warns against.
+[download]
+github = "brave/brave-browser"
+
+[download.github_assets]
+arm64-v8a = "BraveMonoarm64.apk"
+armeabi-v7a = "BraveMonoarm.apk"

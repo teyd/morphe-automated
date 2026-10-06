@@ -88,6 +88,7 @@ describe("previousBuild", () => {
       GitHub,
       GitHub.of({
         releases: () => Effect.succeed(list),
+        releaseByTag: () => Effect.die("unused"),
         rawFile: () => Effect.die("unused"),
         assetJson: (repo, assetId) =>
           manifest === undefined || assetId !== 1
@@ -180,6 +181,7 @@ describe("publishing", () => {
           GitHub,
           GitHub.of({
             releases: () => Effect.succeed(releases),
+            releaseByTag: () => Effect.die("unused"),
             rawFile: () => Effect.die("unused"),
             assetJson: () => Effect.die("unused"),
           }),

@@ -49,6 +49,7 @@ describe("takedownApp", () => {
                 release("x-12.29.1-prod.01-piko-newx-3.50.0-bbbbbbb"),
                 release("youtube-21.16.256-morphe-1.45.0-ccccccc"),
               ]),
+            releaseByTag: () => Effect.die("unused"),
             rawFile: () => Effect.die("unused"),
             assetJson: () => Effect.die("unused"),
           }),
