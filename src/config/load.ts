@@ -59,6 +59,13 @@ export const configHash = (app: AppConfig): string =>
       version: app.version ?? null,
       allow_experimental: app.allow_experimental,
       patches: app.patches,
+      // Where the stock APK comes from decides the artifact, so switching sources rebuilds.
+      download: {
+        apkmirror: app.download.apkmirror ?? null,
+        uptodown: app.download.uptodown ?? null,
+        github: app.download.github ?? null,
+        github_assets: app.download.github_assets ?? null,
+      },
     }),
   );
 

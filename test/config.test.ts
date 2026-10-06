@@ -98,4 +98,20 @@ describe("configHash", () => {
     expect(configHash(renamed.config)).toBe(configHash(base.config));
     expect(configHash(patched.config)).not.toBe(configHash(base.config));
   });
+
+  it("changes when the download source changes", async () => {
+    const base = await Effect.runPromise(parseApp("youtube", read("apps/youtube.toml")));
+
+    const resourced = await Effect.runPromise(
+      parseApp(
+        "youtube",
+        read("apps/youtube.toml").replace(
+          'apkmirror = "google-inc/youtube"',
+          'apkmirror = "someone-else/youtube"',
+        ),
+      ),
+    );
+
+    expect(configHash(resourced.config)).not.toBe(configHash(base.config));
+  });
 });
