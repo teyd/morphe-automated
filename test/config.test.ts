@@ -9,6 +9,7 @@ describe("shipped config", () => {
   it("parses sources.toml", async () => {
     const sources = await Effect.runPromise(parseSources(read("sources.toml")));
     expect(Object.keys(sources).sort()).toEqual([
+      "gboard-patches",
       "hoo-dles",
       "hushfeed",
       "morphe",
@@ -17,6 +18,7 @@ describe("shipped config", () => {
     ]);
     expect(sources["piko-newx"]?.versions).toBe("bundle");
     expect(sources.hushfeed?.versions).toBe("patches-list");
+    expect(sources["gboard-patches"]?.repo).toBe("jasonwu1994/Gboard-patches");
     expect(sources.riky?.repo).toBe("riky-dev/morphe-patches");
     expect(sources["hoo-dles"]?.repo).toBe("hoo-dles/morphe-patches");
     expect(sources.morphe?.cooldown_hours).toBe(6);
