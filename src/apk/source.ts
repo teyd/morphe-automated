@@ -1,6 +1,6 @@
-import { Effect, Result } from "effect";
+import { Effect, Predicate, Result } from "effect";
 import type { AppConfig } from "../config/schema.ts";
-import { ApkNotFound, type SourceBlocked } from "../domain/errors.ts";
+import { ApkNotFound, type SourceBlocked, type VerificationError } from "../domain/errors.ts";
 import type { VariantKind } from "./apkmirror-parse.ts";
 
 export interface ApkRequest {
@@ -22,12 +22,19 @@ export interface ApkFile {
   readonly size: number;
 }
 
+/** What one source can fail with. `SourceBlocked`/`ApkNotFound` move on to the next source. */
+export type ApkSourceError = SourceBlocked | ApkNotFound | VerificationError;
+
 export interface ApkSource<R = never> {
   readonly name: string;
-  readonly fetch: (request: ApkRequest) => Effect.Effect<ApkFile, SourceBlocked | ApkNotFound, R>;
+  readonly fetch: (request: ApkRequest) => Effect.Effect<ApkFile, ApkSourceError, R>;
 }
 
-/** Try each source in order; a blocked or empty source just moves on to the next. */
+/**
+ * Try each source in order; a blocked or empty source just moves on to the next. A source that
+ * downloaded something and failed verification stops the search: falling back would produce a
+ * different artifact under the same fingerprint.
+ */
 export const fetchApk = Effect.fn("fetchApk")(function* (
   sources: ReadonlyArray<ApkSource>,
   request: ApkRequest,
@@ -38,6 +45,9 @@ export const fetchApk = Effect.fn("fetchApk")(function* (
     const result = yield* Effect.result(source.fetch(request));
 
     if (Result.isSuccess(result)) return result.success;
+
+    if (Predicate.isTagged(result.failure, "VerificationError")) return yield* result.failure;
+
     yield* Effect.logWarning(`${source.name}: ${result.failure.message}`);
     failures.push(`${source.name}: ${result.failure.message}`);
   }

@@ -1,5 +1,6 @@
 import { Effect, FileSystem, Path } from "effect";
 import { APKMIRROR_WEB_OPTIONS, apkMirrorSource } from "../apk/apkmirror.ts";
+import { githubSource } from "../apk/github.ts";
 import { fetchApk } from "../apk/source.ts";
 import { uptodownSource } from "../apk/uptodown.ts";
 import { verifyStockApk } from "../apk/verify.ts";
@@ -11,6 +12,7 @@ import { publishRelease } from "../release/publish.ts";
 import { apkAssetName } from "../release/naming.ts";
 import { fetchVerified } from "../services/artifacts.ts";
 import { CurlWeb } from "../services/Curl.ts";
+import { GitHub } from "../services/GitHub.ts";
 import { gpgVerify } from "../services/gpg.ts";
 import { Web, withHeaders } from "../services/Web.ts";
 import { sha256Hex } from "../util/hash.ts";
@@ -69,19 +71,24 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
     bundles.push(file);
   }
 
+  const github = yield* GitHub;
+  const web = yield* Web;
   // APKMirror refuses Bun's TLS fingerprint on download pages but accepts curl.
   const mirror = yield* CurlWeb;
-  const uptodown = withHeaders(yield* Web, { "user-agent": BROWSER_UA });
+  const uptodown = withHeaders(web, { "user-agent": BROWSER_UA });
   yield* Effect.logInfo(`[${app.slug}] fetching ${app.config.package} ${plan.inputs.appVersion}`);
 
-  const stock = yield* fetchApk([apkMirrorSource(mirror), uptodownSource(uptodown)], {
-    packageName: app.config.package,
-    version: plan.inputs.appVersion,
-    arch: app.config.arch,
-    apkFileType: plan.apkFileType,
-    download: app.config.download,
-    destination: path.join(directory, "stock"),
-  });
+  const stock = yield* fetchApk(
+    [githubSource(github, web), apkMirrorSource(mirror), uptodownSource(uptodown)],
+    {
+      packageName: app.config.package,
+      version: plan.inputs.appVersion,
+      arch: app.config.arch,
+      apkFileType: plan.apkFileType,
+      download: app.config.download,
+      destination: path.join(directory, "stock"),
+    },
+  );
 
   yield* Effect.logInfo(
     `[${app.slug}] got ${stock.kind} from ${stock.source} (${stock.size} bytes)`,

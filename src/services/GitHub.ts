@@ -1,11 +1,16 @@
-import { Config, Context, Effect, Layer, Option, Redacted, Schema } from "effect";
+import { Config, Context, Effect, Layer, Option, Redacted, Result, Schema } from "effect";
 import { GitHubError, type WebError } from "../domain/errors.ts";
-import { Releases, type Release } from "../domain/github.ts";
+import { Release, Releases } from "../domain/github.ts";
 import { Web } from "./Web.ts";
 
 export interface GitHubClient {
   /** Most recent releases first, as returned by the API. */
   readonly releases: (repo: string) => Effect.Effect<ReadonlyArray<Release>, GitHubError>;
+  /** One release by its exact tag, or undefined when the repository has no such release. */
+  readonly releaseByTag: (
+    repo: string,
+    tag: string,
+  ) => Effect.Effect<Release | undefined, GitHubError>;
   /** Contents of a file in a repo at a tag or branch. */
   readonly rawFile: (repo: string, ref: string, path: string) => Effect.Effect<string, GitHubError>;
   /**
@@ -49,6 +54,27 @@ export class GitHub extends Context.Service<GitHub, GitHubClient>()("morphe-auto
         );
       });
 
+      const releaseByTag = Effect.fn("GitHub.releaseByTag")(function* (repo: string, tag: string) {
+        const result = yield* Effect.result(
+          web.json(
+            `https://api.github.com/repos/${repo}/releases/tags/${encodeURIComponent(tag)}`,
+            apiHeaders,
+          ),
+        );
+
+        if (Result.isFailure(result)) {
+          if (result.failure.status === 404) return undefined;
+
+          return yield* fromWeb(result.failure);
+        }
+
+        return yield* Schema.decodeUnknownEffect(Release)(result.success).pipe(
+          Effect.mapError(
+            (error) => new GitHubError({ message: `${repo}@${tag}: ${error.message}` }),
+          ),
+        );
+      });
+
       const rawFile = Effect.fn("GitHub.rawFile")(function* (
         repo: string,
         ref: string,
@@ -68,7 +94,7 @@ export class GitHub extends Context.Service<GitHub, GitHubClient>()("morphe-auto
           .pipe(Effect.mapError(fromWeb));
       });
 
-      return GitHub.of({ releases, rawFile, assetJson });
+      return GitHub.of({ releases, releaseByTag, rawFile, assetJson });
     }),
   );
 }
