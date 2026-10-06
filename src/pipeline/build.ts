@@ -1,7 +1,5 @@
 import { Effect, FileSystem, Path } from "effect";
 import { APKMIRROR_WEB_OPTIONS, apkMirrorSource } from "../apk/apkmirror.ts";
-import { githubApkSource } from "../apk/github-apk.ts";
-import { GitHub } from "../services/GitHub.ts";
 import { fetchApk } from "../apk/source.ts";
 import { uptodownSource } from "../apk/uptodown.ts";
 import { verifyStockApk } from "../apk/verify.ts";
@@ -76,17 +74,14 @@ export const buildApp = Effect.fn("buildApp")(function* (plan: AppPlan, options:
   const uptodown = withHeaders(yield* Web, { "user-agent": BROWSER_UA });
   yield* Effect.logInfo(`[${app.slug}] fetching ${app.config.package} ${plan.inputs.appVersion}`);
 
-  const stock = yield* fetchApk(
-    [githubApkSource(yield* GitHub, yield* Web), apkMirrorSource(mirror), uptodownSource(uptodown)],
-    {
-      packageName: app.config.package,
-      version: plan.inputs.appVersion,
-      arch: app.config.arch,
-      apkFileType: plan.apkFileType,
-      download: app.config.download,
-      destination: path.join(directory, "stock"),
-    },
-  );
+  const stock = yield* fetchApk([apkMirrorSource(mirror), uptodownSource(uptodown)], {
+    packageName: app.config.package,
+    version: plan.inputs.appVersion,
+    arch: app.config.arch,
+    apkFileType: plan.apkFileType,
+    download: app.config.download,
+    destination: path.join(directory, "stock"),
+  });
 
   yield* Effect.logInfo(
     `[${app.slug}] got ${stock.kind} from ${stock.source} (${stock.size} bytes)`,
